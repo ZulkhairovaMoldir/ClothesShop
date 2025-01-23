@@ -3,7 +3,7 @@ package config
 import (
 	"log"
 
-	"gorm.io/driver/sqlite" // SQLite
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
@@ -15,5 +15,5 @@ func InitDB() {
 	if err != nil {
 		log.Fatalf("Не удалось подключиться к базе данных: %v", err)
 	}
-	log.Println("Подключение к базе данных успешно установлено")
+	log.Println("Подключение к базе данных установлено")
 }

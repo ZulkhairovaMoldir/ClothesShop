@@ -2,14 +2,18 @@ package handlers
 
 import (
 	"ClothesShop/internal/models"
-	"ClothesShop/internal/repository"
+	"ClothesShop/internal/services"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
 )
 
-func GetUsers(c *gin.Context) {
-	users, err := repositories.GetAllUsers()
+type UserHandlers struct {
+	Service services.UserService
+}
+
+func (h *UserHandlers) GetUsers(c *gin.Context) {
+	users, err := h.Service.GetUsers()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to fetch users"})
 		return
@@ -17,14 +21,14 @@ func GetUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
-func GetUser(c *gin.Context) {
+func (h *UserHandlers) GetUser(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
 		return
 	}
 
-	user, err := repositories.GetUserByID(uint(id))
+	user, err := h.Service.GetUser(uint(id))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
@@ -32,28 +36,28 @@ func GetUser(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
-func CreateUser(c *gin.Context) {
+func (h *UserHandlers) CreateUser(c *gin.Context) {
 	var user models.User
 	if err := c.ShouldBindJSON(&user); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
 
-	if err := repositories.CreateUser(&user); err != nil {
+	if err := h.Service.CreateUser(&user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to create user"})
 		return
 	}
 	c.JSON(http.StatusCreated, user)
 }
 
-func DeleteUser(c *gin.Context) {
+func (h *UserHandlers) DeleteUser(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
 		return
 	}
 
-	if err := repositories.DeleteUser(uint(id)); err != nil {
+	if err := h.Service.DeleteUser(uint(id)); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to delete user"})
 		return
 	}

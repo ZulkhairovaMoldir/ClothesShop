@@ -1,26 +1,33 @@
 package repositories
 
 import (
-	"ClothesShop/config"
 	"ClothesShop/internal/models"
+	"gorm.io/gorm"
 )
 
-func GetAllUsers() ([]models.User, error) {
+type UserRepository struct {
+	DB *gorm.DB
+}
+
+func (r *UserRepository) GetAllUsers() ([]models.User, error) {
 	var users []models.User
-	result := config.DB.Find(&users)
+	result := r.DB.Find(&users)
 	return users, result.Error
 }
 
-func GetUserByID(id uint) (models.User, error) {
+func (r *UserRepository) GetUserByID(id uint) (*models.User, error) {
 	var user models.User
-	result := config.DB.First(&user, id)
-	return user, result.Error
+	result := r.DB.First(&user, id)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &user, nil
 }
 
-func CreateUser(user *models.User) error {
-	return config.DB.Create(user).Error
+func (r *UserRepository) CreateUser(user *models.User) error {
+	return r.DB.Create(user).Error
 }
 
-func DeleteUser(id uint) error {
-	return config.DB.Delete(&models.User{}, id).Error
+func (r *UserRepository) DeleteUser(id uint) error {
+	return r.DB.Delete(&models.User{}, id).Error
 }

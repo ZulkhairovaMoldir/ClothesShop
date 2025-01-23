@@ -1,8 +1,12 @@
 package models
 
+import "gorm.io/gorm"
+
 type User struct {
-	ID       uint   `gorm:"primaryKey"`                        // Unique identifier
-	Name     string `gorm:"type:varchar(100)"`                 // User's name
-	Email    string `gorm:"type:varchar(100);unique;not null"` // Email, unique
-	Password string `gorm:"type:varchar(100)"`                 // Password (hashed)
+	ID        uint   `gorm:"primaryKey"`
+	Name      string `gorm:"type:varchar(100)"`
+	Email     string `gorm:"type:varchar(100);unique;not null"`
+	Password  string `gorm:"type:varchar(100)"`
+	CreatedAt *gorm.DeletedAt
+	UpdatedAt *gorm.DeletedAt
 }

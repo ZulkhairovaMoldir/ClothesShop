@@ -11,9 +11,10 @@ func Migrate() {
 		&models.Product{},
 		&models.Order{},
 		&models.Cart{},
+		&models.User{},
 	)
 	if err != nil {
-		log.Fatalf("Ошибка миграции таблиц: %v", err)
+		log.Fatalf("Failed to migrate tables: %v", err)
 	}
-	log.Println("Миграция таблиц выполнена успешно")
+	log.Println("Database tables migrated successfully")
 }

@@ -4,8 +4,7 @@ import (
 	"ClothesShop/config"
 	"ClothesShop/migrations"
 	"ClothesShop/routes"
-
-	"github.com/gin-gonic/gin"
+	"log"
 )
 
 func main() {
@@ -13,9 +12,11 @@ func main() {
 
 	migrations.Migrate()
 
-	router := gin.Default()
+	router := routes.SetupRoutes()
 
-	routes.RegisterUserRoutes(router)
-
-	router.Run(":8080")
+	log.Println("Сервер запущен на порту 8080...")
+	err := router.Run(":8080")
+	if err != nil {
+		log.Fatalf("Ошибка запуска сервера: %v", err)
+	}
 }
