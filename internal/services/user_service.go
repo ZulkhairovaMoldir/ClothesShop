@@ -6,7 +6,7 @@ import (
 )
 
 type UserService struct {
-	Repo repositories.UserRepository
+	Repo *repository.UserRepository
 }
 
 func (s *UserService) CreateUser(user *models.User) error {

@@ -9,7 +9,7 @@ import (
 )
 
 type UserHandlers struct {
-	Service services.UserService
+	Service *services.UserService
 }
 
 func (h *UserHandlers) GetUsers(c *gin.Context) {

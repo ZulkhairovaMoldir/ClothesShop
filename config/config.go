@@ -1,17 +1,17 @@
 package config
 
 import (
-	"log"
-
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"log"
 )
 
 var DB *gorm.DB
 
 func InitDB() {
+	dsn := "host=localhost user=manager password=manager dbname=clothes_shop port=5432 sslmode=disable"
 	var err error
-	DB, err = gorm.Open(sqlite.Open("clothes_shop.db"), &gorm.Config{})
+	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Не удалось подключиться к базе данных: %v", err)
 	}
