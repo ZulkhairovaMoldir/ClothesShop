@@ -2,20 +2,21 @@ package main
 
 import (
     "ClothesShop/config"
+    "log"
+
     "ClothesShop/internal/handlers"
     "ClothesShop/internal/repository"
     "ClothesShop/internal/services"
     "ClothesShop/middleware"
-    "ClothesShop/migrations"
     "ClothesShop/routes"
-    "log"
     "github.com/gin-gonic/gin"
 )
 
 func main() {
-    config.InitDB()
+    // Load environment variables before anything else
+    config.LoadEnv()
 
-    migrations.Migrate()
+    config.InitDB()
 
     userRepo := &repository.UserRepository{
         DB: config.DB,
@@ -27,46 +28,26 @@ func main() {
         Service: userService,
     }
 
-    orderRepo := &repository.OrderRepository{
-        DB: config.DB,
-    }
-    orderService := &services.OrderService{
-        Repo: orderRepo,
-    }
-    orderHandlers := &handlers.OrderHandlers{
-        Service: orderService,
+    authHandler := &handlers.AuthHandler{
+        Service: userService,
     }
 
-    cartRepo := &repository.CartRepository{
-        DB: config.DB,
-    }
-    cartService := &services.CartService{
-        Repo: cartRepo,
-    }
-    cartHandlers := &handlers.CartHandlers{
-        Service: cartService,
-    }
-
-
-    productRepo := &repository.ProductRepository{
-        DB: config.DB,
-    }
-    productService := &services.ProductService{
-        Repo: productRepo,
-    }
-    productHandlers := &handlers.ProductHandlers{
-        Service: productService,
-    }
-
- 
     router := gin.Default()
-    router.Use(middleware.LoggingMiddleware()) 
-    router.Use(middleware.AuthMiddleware())    
+    router.Use(middleware.LoggingMiddleware())
 
-    routes.SetupUserRoutes(router, userHandlers)        
-    routes.SetupOrderRoutes(router, orderHandlers)       
-    routes.SetupCartRoutes(router, cartHandlers)         
-    routes.SetupProductRoutes(router, productHandlers)   
+    // Public routes
+    public := router.Group("/")
+    {
+        public.POST("/register", userHandlers.CreateUser) // Registration
+        public.POST("/login", authHandler.Login)          // Login
+    }
+
+    // Protected routes
+    protected := router.Group("/")
+    protected.Use(middleware.AuthMiddleware())
+    {
+        routes.SetupUserRoutes(protected, userHandlers, authHandler)
+    }
 
     router.GET("/health-check", func(c *gin.Context) {
         c.JSON(200, gin.H{

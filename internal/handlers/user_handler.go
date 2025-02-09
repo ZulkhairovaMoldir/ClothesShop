@@ -1,65 +1,116 @@
 package handlers
 
 import (
-	"ClothesShop/internal/models"
-	"ClothesShop/internal/services"
-	"github.com/gin-gonic/gin"
-	"net/http"
-	"strconv"
+    "ClothesShop/internal/models"
+    "ClothesShop/internal/services"
+    "ClothesShop/internal/utils"
+    "ClothesShop/middleware"
+    "github.com/gin-gonic/gin"
+    "net/http"
 )
 
 type UserHandlers struct {
-	Service *services.UserService
+    Service *services.UserService
 }
 
-func (h *UserHandlers) GetUsers(c *gin.Context) {
-	users, err := h.Service.GetUsers()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to fetch users"})
-		return
-	}
-	c.JSON(http.StatusOK, users)
+type AuthHandler struct {
+    Service *services.UserService
 }
 
-func (h *UserHandlers) GetUser(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
-		return
-	}
+func (h *AuthHandler) Login(c *gin.Context) {
+    var req struct {
+        Email    string `json:"email"`
+        Password string `json:"password"`
+    }
 
-	user, err := h.Service.GetUser(uint(id))
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-		return
-	}
-	c.JSON(http.StatusOK, user)
+    // Parse and validate the input
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+        return
+    }
+
+    // Find the user by email
+    user, err := h.Service.FindByEmail(req.Email)
+    if err != nil {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email"})
+        return
+    }
+
+    // Check the password
+    if err := utils.CheckPasswordHash(req.Password, user.Password); err != nil {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid password"})
+        return
+    }
+
+    // Generate JWT token
+    token, err := middleware.GenerateJWT(user.ID)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"token": token})
 }
 
 func (h *UserHandlers) CreateUser(c *gin.Context) {
-	var user models.User
-	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
-		return
-	}
+    var req struct {
+        Name     string `json:"name" binding:"required"`
+        Email    string `json:"email" binding:"required"`
+        Password string `json:"password" binding:"required"`
+    }
 
-	if err := h.Service.CreateUser(&user); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to create user"})
-		return
-	}
-	c.JSON(http.StatusCreated, user)
+    // Parse and validate the input
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+        return
+    }
+
+    // Hash the password
+    hashedPassword, err := utils.HashPassword(req.Password)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+        return
+    }
+
+    // Create and save the user
+    user := &models.User{
+        Name:     req.Name,
+        Email:    req.Email,
+        Password: hashedPassword,
+    }
+    if err := h.Service.CreateUser(user); err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+        return
+    }
+
+    c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
+}
+
+func (h *UserHandlers) GetUsers(c *gin.Context) {
+    users, err := h.Service.GetAllUsers()
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get users"})
+        return
+    }
+    c.JSON(http.StatusOK, users)
+}
+
+func (h *UserHandlers) GetUser(c *gin.Context) {
+    id := c.Param("id")
+    user, err := h.Service.GetUserByID(id)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user"})
+        return
+    }
+    c.JSON(http.StatusOK, user)
 }
 
 func (h *UserHandlers) DeleteUser(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
-		return
-	}
-
-	if err := h.Service.DeleteUser(uint(id)); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to delete user"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"message": "User deleted"})
+    id := c.Param("id")
+    err := h.Service.DeleteUser(id)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user"})
+        return
+    }
+    c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
 }

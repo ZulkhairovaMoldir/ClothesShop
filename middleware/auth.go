@@ -1,24 +1,38 @@
 package middleware
 
 import (
-    "crypto/rand"
-    "encoding/hex"
     "fmt"
+    "log"
     "github.com/golang-jwt/jwt/v4"
     "github.com/gin-gonic/gin"
     "net/http"
+    "os"
     "strings"
+    "time"
 )
 
-var secretKey = generateSecretKey()
+var secretKey []byte
 
-func generateSecretKey() []byte {
-    key := make([]byte, 32) // 32 bytes = 256 bits
-    _, err := rand.Read(key)
-    if err != nil {
-        panic(err)
+func init() {
+    secretKey = getSecretKey()
+}
+
+func getSecretKey() []byte {
+    key := os.Getenv("SECRET_KEY")
+    if key == "" {
+        log.Fatal("SECRET_KEY environment variable not set")
     }
-    return key
+    return []byte(key)
+}
+
+func GenerateJWT(userID uint) (string, error) {
+    claims := jwt.MapClaims{
+        "userID": userID,
+        "exp":    time.Now().Add(24 * time.Hour).Unix(), // Token expires in 24 hours
+    }
+
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    return token.SignedString(secretKey)
 }
 
 func AuthMiddleware() gin.HandlerFunc {
