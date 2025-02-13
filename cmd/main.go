@@ -7,8 +7,12 @@ import (
     "ClothesShop/internal/services"
     "ClothesShop/middleware"
     "ClothesShop/migrations"
+    "github.com/gin-contrib/cors"
+    "github.com/gin-contrib/sessions"
+    "github.com/gin-contrib/sessions/cookie"
     "github.com/gin-gonic/gin"
     "log"
+    "time"
 )
 
 func main() {
@@ -41,7 +45,30 @@ func main() {
     orderHandlers := &handlers.OrderHandlers{Service: orderService}
 
     router := gin.Default()
+
+    // Enable CORS
+    router.Use(cors.New(cors.Config{
+        AllowOrigins:     []string{"http://localhost:8080", "http://localhost.:8080"},
+        AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+        AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+        ExposeHeaders:    []string{"Content-Length"},
+        AllowCredentials: true,
+        MaxAge:           12 * time.Hour,
+    }))
+
+    // Enable sessions
+    store := cookie.NewStore([]byte("secret"))
+    router.Use(sessions.Sessions("mysession", store))
+
     router.Use(middleware.LoggingMiddleware())
+
+    // Serve static files from the /static directory
+    router.Static("/static", "./static")
+
+    // Serve the index.html file at the root URL
+    router.GET("/", func(c *gin.Context) {
+        c.File("./static/index.html")
+    })
 
     // Public routes
     public := router.Group("/")
@@ -52,11 +79,13 @@ func main() {
         // Public GET routes (accessible to unauthorized users)
         public.GET("/users", userHandlers.GetUsers)
         public.GET("/users/:id", userHandlers.GetUser)
-        public.GET("/cart/:customerID", cartHandlers.GetCart)
+        public.GET("/cart", cartHandlers.GetCart)
         public.GET("/products", productHandlers.GetProducts)
         public.GET("/products/:id", productHandlers.GetProduct)
         public.GET("/orders", orderHandlers.GetOrders)
         public.GET("/orders/:id", orderHandlers.GetOrder)
+        public.POST("/cart/add", cartHandlers.AddItem)
+        public.DELETE("/cart/remove/:id", cartHandlers.RemoveItem)
     }
 
     // Protected routes (require authentication)
@@ -64,10 +93,11 @@ func main() {
     protected.Use(middleware.AuthMiddleware())
     {
         // User routes
+        protected.GET("/profile", userHandlers.GetProfile)
         protected.DELETE("/users/:id", userHandlers.DeleteUser)
 
         // Cart routes
-        protected.POST("/cart", cartHandlers.AddItem)
+        protected.DELETE("/cart/item/:id", cartHandlers.RemoveItem)
 
         // Product routes
         protected.POST("/products", productHandlers.CreateProduct)

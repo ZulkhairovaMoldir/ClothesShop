@@ -7,6 +7,7 @@ import (
     "ClothesShop/middleware"
     "github.com/gin-gonic/gin"
     "net/http"
+    "strconv"
 )
 
 type UserHandlers struct {
@@ -103,6 +104,27 @@ func (h *UserHandlers) GetUser(c *gin.Context) {
         return
     }
     c.JSON(http.StatusOK, user)
+}
+
+func (h *UserHandlers) GetProfile(c *gin.Context) {
+    userID, exists := c.Get("userID")
+    if !exists {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+        return
+    }
+
+    userIDStr := strconv.Itoa(int(userID.(uint)))
+
+    user, err := h.Service.GetUserByID(userIDStr)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{
+        "name":  user.Name,
+        "email": user.Email,
+    })
 }
 
 func (h *UserHandlers) DeleteUser(c *gin.Context) {
