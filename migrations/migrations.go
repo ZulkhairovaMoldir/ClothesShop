@@ -1,25 +1,16 @@
-package main
+package migrations
 
 import (
-    "ClothesShop/config"
     "ClothesShop/internal/models"
+    "gorm.io/gorm"
     "log"
 )
 
-func main() {
-    // Инициализация базы данных
-    config.InitDB()
-
-    // Выполнение миграций
-    err := config.DB.AutoMigrate(
-        &models.Product{},
-        &models.Order{},
-        &models.Cart{},
-        &models.User{},
-    )
+func RunMigrations(db *gorm.DB) {
+    log.Println("Running migrations...")
+    err := db.AutoMigrate(&models.Product{}, &models.User{}, &models.Order{}, &models.Cart{})
     if err != nil {
-        log.Fatalf("Failed to migrate tables: %v", err)
+        log.Fatalf("Migration error: %v", err)
     }
-
-    log.Println("Migration completed successfully")
+    log.Println("Migrations completed successfully!")
 }

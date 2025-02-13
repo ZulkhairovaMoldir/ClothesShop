@@ -4,9 +4,9 @@ import "gorm.io/gorm"
 
 type Cart struct {
 	ID         uint `gorm:"primaryKey"`
-	ProductID  uint `gorm:"not null"` // Ссылка на продукт
+	ProductID  uint `gorm:"not null"` 
 	Quantity   int  `gorm:"not null"`
-	CustomerID uint `gorm:"not null"` // Ссылка на клиента
+	CustomerID uint `gorm:"not null"` 
 	CreatedAt  *gorm.DeletedAt
 	UpdatedAt  *gorm.DeletedAt
 }

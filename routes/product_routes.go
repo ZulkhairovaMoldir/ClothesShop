@@ -1,17 +1,16 @@
-
 package routes
 
 import (
-	"ClothesShop/internal/handlers"
-	"github.com/gin-gonic/gin"
+    "ClothesShop/internal/handlers"
+    "ClothesShop/middleware"
+    "github.com/gin-gonic/gin"
 )
 
 func SetupProductRoutes(router *gin.Engine, productHandlers *handlers.ProductHandlers) {
-	productRoutes := router.Group("/products")
-	{
-		productRoutes.POST("", productHandlers.CreateProduct)
-		productRoutes.GET("", productHandlers.GetProducts)
-		productRoutes.GET("/:id", productHandlers.GetProduct)
-		productRoutes.DELETE("/:id", productHandlers.DeleteProduct)
-	}
+    productRoutes := router.Group("/products")
+    {
+        productRoutes.POST("", middleware.AuthMiddleware(), productHandlers.CreateProduct) // Only admins can add products
+        productRoutes.GET("", productHandlers.GetProducts) // Public
+        productRoutes.GET("/:id", productHandlers.GetProduct) // Public
+    }
 }
