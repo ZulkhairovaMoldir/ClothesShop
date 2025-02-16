@@ -60,15 +60,28 @@
     <script>
         const API_BASE = "http://localhost:8080";
 
-        function checkAuth() {
+        async function checkAuth() {
             const token = localStorage.getItem("token");
             const authButtons = document.getElementById("auth-buttons");
 
             if (token) {
-                authButtons.innerHTML = `
-                    <button onclick="location.href='/static/profile.html'" class="btn btn-primary">Profile</button>
-                    <button onclick="logout()" class="btn btn-danger">Logout</button>
-                `;
+                try {
+                    const res = await fetch(`${API_BASE}/profile`, {
+                        headers: { "Authorization": `Bearer ${token}` }
+                    });
+
+                    if (res.ok) {
+                        authButtons.innerHTML = `
+                            <button onclick="location.href='/static/profile.html'" class="btn btn-primary">Profile</button>
+                            <button onclick="logout()" class="btn btn-danger">Logout</button>
+                        `;
+                    } else {
+                        localStorage.removeItem("token"); // Remove invalid token
+                        location.reload();
+                    }
+                } catch (error) {
+                    console.error("Auth check failed:", error);
+                }
             } else {
                 authButtons.innerHTML = `
                     <button onclick="location.href='/static/login.html'" class="btn btn-primary">Login</button>
