@@ -10,19 +10,17 @@ import (
 var DB *gorm.DB
 
 func InitDB() {
-    dsn := "host=localhost user=postgres password=hasan160 dbname=clothes_store port=5432 sslmode=disable"
-    var err error
-    DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
-    if err != nil {
-        log.Fatalf("Не удалось подключиться к базе данных: %v", err)
-    }
-    log.Println("Подключение к базе данных установлено")
+	dsn := "host=localhost user=postgres password=hasan160 dbname=clothes_store port=5432 sslmode=disable"
+	var err error
+	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatalf("Не удалось подключиться к базе данных: %v", err)
+	}
+	log.Println("Подключение к базе данных установлено")
 
-    // AutoMigrate to apply schema changes
-    DB.AutoMigrate(&models.Product{})
+	// AutoMigrate to apply schema changes
+	DB.AutoMigrate(&models.Product{})
 }
-
-
 
 // import (
 //     "gorm.io/driver/postgres"

@@ -3,6 +3,8 @@ package handlers
 import (
     "ClothesShop/internal/models"
     "ClothesShop/internal/services"
+    "crypto/rand"
+    "encoding/hex"
     "github.com/gin-contrib/sessions"
     "github.com/gin-gonic/gin"
     "log"
@@ -14,91 +16,119 @@ type CartHandlers struct {
     Service *services.CartService
 }
 
+// GetCart - Retrieves the cart for logged-in or guest users
 func (h *CartHandlers) GetCart(c *gin.Context) {
-    userID, exists := c.Get("userID")
+    session := sessions.Default(c)
+    userID, userExists := c.Get("userID")
+    sessionID, sessionExists := session.Get("sessionID").(string)
 
-    if exists {
-        // LOGGED-IN USER → Fetch cart from the database
-        cart, err := h.Service.GetCart(userID.(uint))
-        if err != nil {
-            c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not fetch cart"})
-            return
-        }
-        c.JSON(http.StatusOK, cart)
-    } else {
-        // GUEST USER → Fetch cart from session
-        session := sessions.Default(c)
-        cart := session.Get("cart")
-        if cart == nil {
-            cart = []models.Cart{}
-        }
-        c.JSON(http.StatusOK, cart)
+    var cartItems []map[string]interface{}
+    var err error
+
+    if userExists {
+        cartItems, err = h.Service.GetCart(userID.(uint))
+    } else if sessionExists {
+        cartItems, err = h.Service.GetGuestCart(sessionID)
     }
+
+    if err != nil {
+        log.Printf("Error fetching cart: %v", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch cart"})
+        return
+    }
+
+    c.JSON(http.StatusOK, cartItems) // Send only the array, not an object
 }
 
+// AddItem - Adds an item to the cart for logged-in or guest users
 func (h *CartHandlers) AddItem(c *gin.Context) {
-    var request struct {
-        ProductID uint `json:"productId"`
-    }
-    if err := c.ShouldBindJSON(&request); err != nil {
-        log.Printf("Error binding JSON: %v", err)
+    var cartItem models.Cart
+
+    if err := c.ShouldBindJSON(&cartItem); err != nil {
+        log.Printf("Invalid request data: %v", err)
         c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
         return
     }
 
-    userID, exists := c.Get("userID")
+    session := sessions.Default(c)
+    userID, userExists := c.Get("userID")
+    sessionID, sessionExists := session.Get("sessionID").(string)
 
-    if exists {
-        // LOGGED-IN USER → Save to Database
-        userIDUint := userID.(uint)
-        cartItem := models.Cart{
-            CustomerID: &userIDUint, // Convert uint to *uint
-            ProductID:  request.ProductID,
-            Quantity:   1,
-        }
-        if err := h.Service.AddToCart(&cartItem); err != nil {
-            c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not add to cart"})
-            return
-        }
+    if userExists {
+        cartItem.CustomerID = new(uint)
+        *cartItem.CustomerID = userID.(uint)
     } else {
-        // GUEST USER → Save to Session
-        session := sessions.Default(c)
-        cart := session.Get("cart")
-        if cart == nil {
-            cart = []models.Cart{}
+        if !sessionExists {
+            sessionID = generateSessionID()
+            session.Set("sessionID", sessionID)
+            session.Save()
         }
-        cart = append(cart.([]models.Cart), models.Cart{ProductID: request.ProductID, Quantity: 1})
-        session.Set("cart", cart)
-        session.Save()
+        cartItem.SessionID = &sessionID
+    }
+
+    if err := h.Service.AddToCart(&cartItem); err != nil {
+        log.Printf("Failed to add item to cart: %v", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add to cart"})
+        return
     }
 
     c.JSON(http.StatusCreated, gin.H{"message": "Item added successfully"})
 }
 
+// RemoveItem - Removes an item from the cart
 func (h *CartHandlers) RemoveItem(c *gin.Context) {
-    id, err := strconv.Atoi(c.Param("id"))
+    cartItemID, err := strconv.Atoi(c.Param("id"))
     if err != nil {
-        log.Printf("Error parsing cart ID: %v", err)
+        log.Printf("Invalid cart ID format: %v", err)
         c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Cart ID"})
         return
     }
 
     session := sessions.Default(c)
-    cart := session.Get("cart")
-    if cart == nil {
-        c.JSON(http.StatusNotFound, gin.H{"error": "Cart not found"})
-        return
-    }
+    userID, userExists := c.Get("userID")
 
-    cartItems := cart.([]models.Cart)
-    for i, item := range cartItems {
-        if item.ID == uint(id) {
-            cartItems = append(cartItems[:i], cartItems[i+1:]...)
-            break
+    if userExists {
+        if err := h.Service.RemoveFromUserCart(uint(cartItemID), userID.(uint)); err != nil {
+            log.Printf("Failed to remove item from user cart: %v", err)
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove item"})
+            return
         }
-    }
-    session.Set("cart", cartItems)
-    session.Save()
+    } else {
+        cart := session.Get("cart")
+        if cart == nil {
+            log.Printf("Cart not found in session")
+            c.JSON(http.StatusNotFound, gin.H{"error": "Cart not found"})
+            return
+        }
 
-    c.JSON(http.StatusOK, gin.H{"message": "Item removed from cart"})
+        cartItems, ok := cart.([]map[string]interface{})
+        if !ok {
+            log.Printf("Invalid cart format")
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid cart format"})
+            return
+        }
+
+        updatedCart := make([]map[string]interface{}, 0)
+        for _, item := range cartItems {
+            if uint(item["id"].(float64)) != uint(cartItemID) {
+                updatedCart = append(updatedCart, item)
+            }
+        }
+
+        session.Set("cart", updatedCart)
+        session.Save()
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "Item removed successfully"})
+}
+
+// GenerateSessionID - Creates a secure session ID for guests
+func generateSessionID() string {
+    bytes := make([]byte, 16)
+    _, err := rand.Read(bytes)
+    if err != nil {
+        log.Printf("Error generating session ID: %v", err)
+        return ""
+    }
+    return hex.EncodeToString(bytes)
 }
