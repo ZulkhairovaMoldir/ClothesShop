@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <meta name="description" content="" />
     <meta name="author" content="" />
-    <title>Shop - Clothes Shop</title>
+    <title>Cart - Clothes Shop</title>
     <!-- Favicon-->
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
     <!-- Bootstrap CSS -->
@@ -44,16 +44,19 @@
     <header class="bg-dark py-5">
         <div class="container px-4 px-lg-5 my-5">
             <div class="text-center text-white">
-                <h1 class="display-4 fw-bolder">Shop in style</h1>
-                <p class="lead fw-normal text-white-50 mb-0">With this shop homepage template</p>
+                <h1 class="display-4 fw-bolder">Your Cart</h1>
+                <p class="lead fw-normal text-white-50 mb-0">Review your items before checkout</p>
             </div>
         </div>
     </header>
-    <!-- Products Section-->
+    <!-- Cart Section-->
     <section class="py-5">
         <div class="container px-4 px-lg-5 mt-5">
-            <div class="row gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center" id="products">
-                <!-- Products will be dynamically inserted here -->
+            <div class="row gx-4 gx-lg-5" id="cart-items">
+                <!-- Cart items will be dynamically inserted here -->
+            </div>
+            <div class="text-center mt-4">
+                <button class="btn btn-primary" onclick="checkout()">Proceed to Checkout</button>
             </div>
         </div>
     </section>
@@ -66,34 +69,6 @@
     <!-- Core theme JS-->
     <script>
         const API_BASE = "http://localhost:8080";
-
-        async function fetchProducts() {
-            const res = await fetch(`${API_BASE}/products`);
-            const products = await res.json();
-            
-            const productsContainer = document.getElementById("products");
-            productsContainer.innerHTML = "";
-            
-            products.forEach(product => {
-                const div = document.createElement("div");
-                div.className = "col mb-5";
-                div.innerHTML = `
-                    <div class="card h-100">
-                        <img class="card-img-top" src="https://dummyimage.com/450x300/dee2e6/6c757d.jpg" alt="..." />
-                        <div class="card-body p-4">
-                            <div class="text-center">
-                                <h5 class="fw-bolder">${product.Name}</h5>
-                                $${product.Price}
-                            </div>
-                        </div>
-                        <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
-                            <div class="text-center"><button id="add-btn-${product.ID}" class="btn btn-outline-dark mt-auto" onclick="addToCart(${product.ID})">Add to Cart</button></div>
-                        </div>
-                    </div>
-                `;
-                productsContainer.appendChild(div);
-            });
-        }
 
         async function fetchCart() {
             try {
@@ -115,36 +90,47 @@
                     return;
                 }
 
+                const cartItemsContainer = document.getElementById("cart-items");
+                cartItemsContainer.innerHTML = "";
+
+                cartData.forEach(item => {
+                    const div = document.createElement("div");
+                    div.className = "col-12 mb-4";
+                    div.innerHTML = `
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <img class="img-fluid" src="https://dummyimage.com/450x300/dee2e6/6c757d.jpg" alt="..." />
+                                    </div>
+                                    <div class="col-md-8">
+                                        <h5 class="fw-bolder">${item.name}</h5>
+                                        <p>Quantity: ${item.quantity}</p>
+                                        <p>Price: $${item.price}</p>
+                                        <button class="btn btn-danger" onclick="removeFromCart(${item.product_id})">Remove</button>
+                                        <button class="btn btn-secondary" onclick="updateQuantity(${item.product_id}, -1)">-</button>
+                                        <button class="btn btn-secondary" onclick="updateQuantity(${item.product_id}, 1)">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    cartItemsContainer.appendChild(div);
+                });
+
                 const cartCount = cartData.reduce((acc, item) => acc + item.quantity, 0);
                 document.getElementById("cart-count").textContent = cartCount;
-
-                // Update the "Add to Cart" buttons
-                cartData.forEach(item => {
-                    const btn = document.getElementById(`add-btn-${item.product_id}`);
-                    if (btn) {
-                        btn.innerText = "Added to Cart";
-                        btn.disabled = true;
-                    }
-                });
             } catch (error) {
                 console.error("Error fetching cart:", error);
             }
         }
 
-        async function addToCart(productId) {
-            let user = JSON.parse(localStorage.getItem("user")); // Get logged-in user
-            let bodyData = { productId, quantity: 1 };
-
-            if (user && user.customer_id) {
-                bodyData.customer_id = user.customer_id; // Send customer_id if logged in
-            }
-
-            await fetch(`${API_BASE}/cart/add`, {
+        async function updateQuantity(productId, change) {
+            await fetch(`${API_BASE}/cart/update`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(bodyData),
+                body: JSON.stringify({ product_id: productId, quantity: change }),
             });
-
             fetchCart();
         }
 
@@ -156,30 +142,11 @@
             fetchCart();
         }
 
-        function checkAuth() {
-            // Check if the user is authenticated
-            const user = JSON.parse(localStorage.getItem("user"));
-            const authButtons = document.getElementById("auth-buttons");
-
-            if (user && user.token) {
-                authButtons.innerHTML = `
-                    <button class="btn btn-outline-dark" onclick="logout()">Logout</button>
-                `;
-            } else {
-                authButtons.innerHTML = `
-                    <button class="btn btn-outline-dark" onclick="location.href='/static/login.html'">Login</button>
-                    <button class="btn btn-outline-dark" onclick="location.href='/static/register.html'">Register</button>
-                `;
-            }
+        function checkout() {
+            alert("Proceeding to checkout...");
+            // Implement checkout logic here
         }
 
-        function logout() {
-            localStorage.removeItem("user");
-            location.reload();
-        }
-
-        checkAuth();
-        fetchProducts();
         fetchCart();
     </script>
 </body>
