@@ -1,13 +1,13 @@
 package models
 
-import "gorm.io/gorm"
+import "time"
 
 type Cart struct {
-	ID         uint    `gorm:"primaryKey"`
-	ProductID  uint    `gorm:"not null"`
-	Quantity   int     `gorm:"not null"`
-	CustomerID *uint   `gorm:"default:null"` // Allow NULL values
-	SessionID  *string `gorm:"default:null"` // Add SessionID for guest users
-	CreatedAt  *gorm.DeletedAt
-	UpdatedAt  *gorm.DeletedAt
+    ID         uint       `gorm:"primaryKey"`
+    ProductID  uint       `gorm:"not null"`
+    Quantity   int        `gorm:"not null"`
+    CustomerID *uint      `gorm:"default:null"` 
+    SessionID  *string    `gorm:"default:null"`
+    CreatedAt  time.Time
+    UpdatedAt  time.Time
 }

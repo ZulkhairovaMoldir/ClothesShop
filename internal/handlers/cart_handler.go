@@ -60,12 +60,35 @@ func (h *CartHandlers) UpdateItemQuantity(c *gin.Context) {
         return
     }
 
-    if err := h.Service.UpdateCartQuantity(req.ProductID, req.Quantity); err != nil {
+    session := sessions.Default(c)
+    customerID, exists := c.Get("customerID")
+
+    var sessionID *string
+    var customerIDPtr *uint
+
+    if exists {
+        id := customerID.(uint)
+        customerIDPtr = &id
+    } else {
+        sessionIDVal := session.Get("sessionID")
+        if sessionIDVal != nil {
+            sessionIDStr := sessionIDVal.(string)
+            sessionID = &sessionIDStr
+        }
+    }
+
+    updatedCartItem, err := h.Service.UpdateCartQuantity(req.ProductID, req.Quantity, sessionID, customerIDPtr)
+    if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
     }
 
-    c.JSON(http.StatusOK, gin.H{"message": "Quantity updated"})
+    if updatedCartItem == nil {
+        c.JSON(http.StatusOK, gin.H{"message": "Item removed from cart"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "Quantity updated", "quantity": updatedCartItem.Quantity})
 }
 
 func (h *CartHandlers) RemoveItem(c *gin.Context) {

@@ -29,7 +29,7 @@ func main() {
     cartService := &services.CartService{Repo: cartRepo}
     userService := &services.UserService{Repo: userRepo, CartService: cartService}
     userHandlers := &handlers.UserHandlers{Service: userService, CartService: cartService}
-    authHandler := &handlers.AuthHandler{Service: userService, CartService: cartService} // Add CartService here
+    authHandler := &handlers.AuthHandler{Service: userService, CartService: cartService}
 
     // Initialize Cart-related components
     cartHandlers := &handlers.CartHandlers{Service: cartService}
@@ -81,6 +81,7 @@ func main() {
         public.GET("/users/:id", userHandlers.GetUser)
         public.GET("/cart", cartHandlers.GetCart)
         public.POST("/cart/add", cartHandlers.AddItem)
+        public.POST("/cart/update", cartHandlers.UpdateItemQuantity)
         public.DELETE("/cart/remove/:id", cartHandlers.RemoveItem)
         public.GET("/products", productHandlers.GetProducts)
         public.GET("/products/:id", productHandlers.GetProduct)

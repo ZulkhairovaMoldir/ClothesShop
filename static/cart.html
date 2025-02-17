@@ -105,11 +105,11 @@
                                     </div>
                                     <div class="col-md-8">
                                         <h5 class="fw-bolder">${item.name}</h5>
-                                        <p>Quantity: ${item.quantity}</p>
+                                        <p id="quantity-${item.product_id}">Quantity: ${item.quantity}</p>
                                         <p>Price: $${item.price}</p>
                                         <button class="btn btn-danger" onclick="removeFromCart(${item.product_id})">Remove</button>
-                                        <button class="btn btn-secondary" onclick="updateQuantity(${item.product_id}, -1)">-</button>
-                                        <button class="btn btn-secondary" onclick="updateQuantity(${item.product_id}, 1)">+</button>
+                                        <button class="btn btn-secondary" onclick="decrementQuantity(${item.product_id})">-</button>
+                                        <button class="btn btn-secondary" onclick="incrementQuantity(${item.product_id})">+</button>
                                     </div>
                                 </div>
                             </div>
@@ -125,21 +125,67 @@
             }
         }
 
-        async function updateQuantity(productId, change) {
-            await fetch(`${API_BASE}/cart/update`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ product_id: productId, quantity: change }),
-            });
-            fetchCart();
+        function incrementQuantity(productId) {
+            const quantityElement = document.getElementById(`quantity-${productId}`);
+            let currentQuantity = parseInt(quantityElement.innerText.split(": ")[1]);
+
+            // ✅ Fix: Update UI first and prevent multiple calls
+            quantityElement.innerText = `Quantity: ${currentQuantity + 1}`;
+
+            updateQuantity(productId, currentQuantity + 1);
+        }
+
+        function decrementQuantity(productId) {
+            const quantityElement = document.getElementById(`quantity-${productId}`);
+            let currentQuantity = parseInt(quantityElement.innerText.split(": ")[1]);
+
+            if (currentQuantity > 1) {
+                // ✅ Fix: Update UI before making API call
+                quantityElement.innerText = `Quantity: ${currentQuantity - 1}`;
+                updateQuantity(productId, currentQuantity - 1);
+            } else {
+                removeFromCart(productId);
+            }
+        }
+
+        async function updateQuantity(productId, newQuantity) {
+            try {
+                const response = await fetch(`${API_BASE}/cart/update`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ product_id: productId, quantity: newQuantity }),
+                });
+
+                const result = await response.json();
+                console.log("Updated Cart Response:", result);
+
+                if (result.quantity !== undefined) {
+                    const quantityElement = document.getElementById(`quantity-${productId}`);
+                    quantityElement.innerText = `Quantity: ${result.quantity}`;
+                }
+
+                fetchCart(); // Refresh cart data from the backend
+            } catch (error) {
+                console.error("Error updating quantity:", error);
+            }
         }
 
         async function removeFromCart(productId) {
-            await fetch(`${API_BASE}/cart/remove/${productId}`, {
-                method: "DELETE",
-                headers: { "Content-Type": "application/json" }
-            });
-            fetchCart();
+            try {
+                const response = await fetch(`${API_BASE}/cart/remove`, {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ product_id: productId }) // Ensure correct request format
+                });
+
+                if (response.ok) {
+                    fetchCart(); // Refresh UI after deletion
+                } else {
+                    console.error("Error removing item:", await response.text());
+                }
+            } catch (error) {
+                console.error("Error in removeFromCart:", error);
+            }
         }
 
         function checkout() {

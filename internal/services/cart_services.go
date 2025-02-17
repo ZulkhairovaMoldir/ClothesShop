@@ -28,19 +28,33 @@ func (s *CartService) AddToCart(cart *models.Cart) error {
     return s.Repo.DB.Create(cart).Error
 }
 
-func (s *CartService) UpdateCartQuantity(productID uint, newQuantity int) error {
+func (s *CartService) UpdateCartQuantity(productID uint, newQuantity int, sessionID *string, customerID *uint) (*models.Cart, error) {
     var cartItem models.Cart
-    err := s.Repo.DB.Where("product_id = ?", productID).First(&cartItem).Error
+    query := s.Repo.DB.Where("product_id = ?", productID)
+
+    if customerID != nil {
+        query = query.Where("customer_id = ?", *customerID)
+    } else if sessionID != nil {
+        query = query.Where("session_id = ?", *sessionID)
+    }
+
+    err := query.First(&cartItem).Error
     if err != nil {
-        return err
+        return nil, err
     }
 
     if newQuantity <= 0 {
-        return s.Repo.DB.Delete(&cartItem).Error
+        s.Repo.DB.Delete(&cartItem)
+        return nil, nil
     }
 
     cartItem.Quantity = newQuantity
-    return s.Repo.DB.Save(&cartItem).Error
+    err = s.Repo.DB.Save(&cartItem).Error
+    if err != nil {
+        return nil, err
+    }
+
+    return &cartItem, nil
 }
 
 func (s *CartService) RemoveFromUserCart(productID uint, customerID uint) error {
