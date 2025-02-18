@@ -39,6 +39,7 @@
             });
 
             if (res.ok) {
+                localStorage.setItem("customerID", data.customerID);
                 alert("Registration successful!");
                 window.location.href = "/static/login.html";
             } else {

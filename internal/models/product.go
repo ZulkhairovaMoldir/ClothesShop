@@ -9,6 +9,7 @@ type Product struct {
 	Description string `gorm:"type:text"`
 	Price       float64
 	Stock       int
+	ImageURL    string `json:"image_url"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }

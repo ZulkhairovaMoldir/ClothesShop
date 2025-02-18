@@ -1,0 +1,349 @@
+Index: static/index.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n    <meta charset=\"UTF-8\">\r\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\r\n    <title>Clothes Store</title>\r\n    <link href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css\" rel=\"stylesheet\">\r\n    <style>\r\n        body {\r\n            font-family: Arial, sans-serif;\r\n            margin: 0;\r\n            padding: 0;\r\n            background-color: #f8f8f8;\r\n            display: flex;\r\n            flex-direction: column;\r\n        }\r\n        .navbar {\r\n            width: 100%;\r\n            display: flex;\r\n            justify-content: space-between;\r\n            padding: 10px;\r\n            background: white;\r\n            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);\r\n        }\r\n        .container {\r\n            max-width: 800px;\r\n            background: white;\r\n            padding: 20px;\r\n            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);\r\n            margin: auto;\r\n        }\r\n        .cart-container {\r\n            width: 250px;\r\n            background: white;\r\n            padding: 20px;\r\n            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);\r\n            position: fixed;\r\n            right: 10px;\r\n            top: 60px;\r\n            height: fit-content;\r\n        }\r\n    </style>\r\n</head>\r\n<body>\r\n    <div class=\"navbar\">\r\n        <h1>Clothes Store</h1>\r\n        <div id=\"auth-buttons\">\r\n            <!-- Buttons will be dynamically inserted here -->\r\n        </div>\r\n    </div>\r\n    <div class=\"cart-container\">\r\n        <h2>Cart</h2>\r\n        <div id=\"cart\"></div>\r\n    </div>\r\n    <div class=\"container\">\r\n        <h2>Products</h2>\r\n        <div id=\"products\"></div>\r\n    </div>\r\n\r\n    <script>\r\n        const API_BASE = \"http://localhost:8080\";\r\n\r\n        function checkAuth() {\r\n            const token = localStorage.getItem(\"token\");\r\n            const authButtons = document.getElementById(\"auth-buttons\");\r\n\r\n            if (token) {\r\n                authButtons.innerHTML = `\r\n                    <button onclick=\"location.href='/static/profile.html'\" class=\"btn btn-primary\">Profile</button>\r\n                    <button onclick=\"logout()\" class=\"btn btn-danger\">Logout</button>\r\n                `;\r\n            } else {\r\n                authButtons.innerHTML = `\r\n                    <button onclick=\"location.href='/static/login.html'\" class=\"btn btn-primary\">Login</button>\r\n                    <button onclick=\"location.href='/static/register.html'\" class=\"btn btn-secondary\">Register</button>\r\n                `;\r\n            }\r\n        }\r\n\r\n        function logout() {\r\n            localStorage.removeItem(\"token\");\r\n            location.reload();\r\n        }\r\n\r\n        async function fetchProducts() {\r\n            const res = await fetch(`${API_BASE}/products`);\r\n            const products = await res.json();\r\n            \r\n            const productsContainer = document.getElementById(\"products\");\r\n            productsContainer.innerHTML = \"\";\r\n            \r\n            products.forEach(product => {\r\n                const div = document.createElement(\"div\");\r\n                div.className = \"product\";\r\n                div.innerHTML = `\r\n                    <span>${product.Name} - $${product.Price}</span>\r\n                    <button onclick=\"addToCart(${product.ID})\" class=\"btn btn-success\">Add to Cart</button>\r\n                `;\r\n                productsContainer.appendChild(div);\r\n            });\r\n        }\r\n\r\n        async function fetchCart() {\r\n            const res = await fetch(`${API_BASE}/cart`);\r\n            const cart = await res.json();\r\n            \r\n            const cartContainer = document.getElementById(\"cart\");\r\n            cartContainer.innerHTML = \"\";\r\n            \r\n            cart.forEach(item => {\r\n                const div = document.createElement(\"div\");\r\n                div.innerHTML = `\r\n                    <span>Product ID: ${item.ProductID} - Quantity: ${item.Quantity}</span>\r\n                    <button onclick=\"removeFromCart(${item.ID})\" class=\"btn btn-danger\">Remove</button>\r\n                `;\r\n                cartContainer.appendChild(div);\r\n            });\r\n        }\r\n\r\n        async function addToCart(productId) {\r\n            await fetch(`${API_BASE}/cart/add`, {\r\n                method: \"POST\",\r\n                headers: { \"Content-Type\": \"application/json\" },\r\n                body: JSON.stringify({ productId })\r\n            });\r\n            fetchCart();\r\n        }\r\n\r\n        async function removeFromCart(productId) {\r\n            await fetch(`${API_BASE}/cart/remove/${productId}`, {\r\n                method: \"DELETE\",\r\n                headers: { \"Content-Type\": \"application/json\" }\r\n            });\r\n            fetchCart();\r\n        }\r\n\r\n        checkAuth();\r\n        fetchProducts();\r\n        fetchCart();\r\n    </script>\r\n</body>\r\n</html>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/static/index.html b/static/index.html
+--- a/static/index.html	(revision 3fe5a015b4f2ffb1eea099e6ba5c5df0c3f0b4b5)
++++ b/static/index.html	(date 1739450430672)
+@@ -63,73 +63,90 @@
+         function checkAuth() {
+             const token = localStorage.getItem("token");
+             const authButtons = document.getElementById("auth-buttons");
++            const customerID = localStorage.getItem("customerID");
+ 
+             if (token) {
+                 authButtons.innerHTML = `
+-                    <button onclick="location.href='/static/profile.html'" class="btn btn-primary">Profile</button>
+-                    <button onclick="logout()" class="btn btn-danger">Logout</button>
+-                `;
++            <button onclick="location.href='/static/profile.html'" class="btn btn-primary">Profile</button>
++            <button onclick="logout()" class="btn btn-danger">Logout</button>
++        `;
+             } else {
+                 authButtons.innerHTML = `
+-                    <button onclick="location.href='/static/login.html'" class="btn btn-primary">Login</button>
+-                    <button onclick="location.href='/static/register.html'" class="btn btn-secondary">Register</button>
+-                `;
++            <button onclick="location.href='/static/login.html'" class="btn btn-primary">Login</button>
++            <button onclick="location.href='/static/register.html'" class="btn btn-secondary">Register</button>
++        `;
+             }
+         }
+ 
+         function logout() {
+             localStorage.removeItem("token");
++            localStorage.removeItem("customerID");
+             location.reload();
+         }
+ 
+         async function fetchProducts() {
+             const res = await fetch(`${API_BASE}/products`);
+             const products = await res.json();
+-            
++
+             const productsContainer = document.getElementById("products");
+             productsContainer.innerHTML = "";
+-            
++
+             products.forEach(product => {
+                 const div = document.createElement("div");
+                 div.className = "product";
+                 div.innerHTML = `
+-                    <span>${product.Name} - $${product.Price}</span>
+-                    <button onclick="addToCart(${product.ID})" class="btn btn-success">Add to Cart</button>
+-                `;
++            <span>${product.Name} - $${product.Price}</span>
++            <button onclick="addToCart(${product.ID})" class="btn btn-success">Add to Cart</button>
++        `;
+                 productsContainer.appendChild(div);
+             });
+         }
+ 
+         async function fetchCart() {
+-            const res = await fetch(`${API_BASE}/cart`);
++            const customerID = localStorage.getItem("customerID");
++            if (!customerID) return;
++
++            const res = await fetch(`${API_BASE}/cart/${customerID}`);
+             const cart = await res.json();
+-            
++
+             const cartContainer = document.getElementById("cart");
+             cartContainer.innerHTML = "";
+-            
++
+             cart.forEach(item => {
+                 const div = document.createElement("div");
+                 div.innerHTML = `
+-                    <span>Product ID: ${item.ProductID} - Quantity: ${item.Quantity}</span>
+-                    <button onclick="removeFromCart(${item.ID})" class="btn btn-danger">Remove</button>
+-                `;
++            <span>Product ID: ${item.ProductID} - Quantity: ${item.Quantity}</span>
++            <button onclick="removeFromCart(${item.ID})" class="btn btn-danger">Remove</button>
++        `;
+                 cartContainer.appendChild(div);
+             });
+         }
+ 
+         async function addToCart(productId) {
+-            await fetch(`${API_BASE}/cart/add`, {
++            const customerID = localStorage.getItem("customerID");
++            if (!customerID) return alert("You must be logged in to add items to the cart.");
++
++            await fetch(`${API_BASE}/cart`, {
+                 method: "POST",
+-                headers: { "Content-Type": "application/json" },
+-                body: JSON.stringify({ productId })
++                headers: {
++                    "Content-Type": "application/json",
++                    "Authorization": `Bearer ${localStorage.getItem("token")}`
++                },
++                body: JSON.stringify({ productId, customerID })
+             });
+             fetchCart();
+         }
+ 
+-        async function removeFromCart(productId) {
+-            await fetch(`${API_BASE}/cart/remove/${productId}`, {
++        async function removeFromCart(cartItemId) {
++            const customerID = localStorage.getItem("customerID");
++            if (!customerID) return;
++
++            await fetch(`${API_BASE}/cart/item/${cartItemId}`, {
+                 method: "DELETE",
+-                headers: { "Content-Type": "application/json" }
++                headers: {
++                    "Content-Type": "application/json",
++                    "Authorization": `Bearer ${localStorage.getItem("token")}`
++                }
+             });
+             fetchCart();
+         }
+@@ -137,6 +154,7 @@
+         checkAuth();
+         fetchProducts();
+         fetchCart();
++
+     </script>
+ </body>
+ </html>
+\ No newline at end of file
+Index: static/login.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n    <meta charset=\"UTF-8\">\r\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\r\n    <title>Login</title>\r\n    <link href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css\" rel=\"stylesheet\">\r\n</head>\r\n<body class=\"d-flex justify-content-center align-items-center vh-100\">\r\n    <div class=\"container w-25\">\r\n        <h2 class=\"text-center\">Login</h2>\r\n        <form id=\"loginForm\">\r\n            <div class=\"mb-3\">\r\n                <label for=\"email\" class=\"form-label\">Email</label>\r\n                <input type=\"email\" class=\"form-control\" id=\"email\" required>\r\n            </div>\r\n            <div class=\"mb-3\">\r\n                <label for=\"password\" class=\"form-label\">Password</label>\r\n                <input type=\"password\" class=\"form-control\" id=\"password\" required>\r\n            </div>\r\n            <button type=\"submit\" class=\"btn btn-primary w-100\">Login</button>\r\n        </form>\r\n    </div>\r\n    <script>\r\n        document.getElementById(\"loginForm\").addEventListener(\"submit\", async function(event) {\r\n            event.preventDefault();\r\n            const email = document.getElementById(\"email\").value;\r\n            const password = document.getElementById(\"password\").value;\r\n            \r\n            const res = await fetch(\"http://localhost:8080/login\", {\r\n                method: \"POST\",\r\n                headers: { \"Content-Type\": \"application/json\" },\r\n                body: JSON.stringify({ email, password })\r\n            });\r\n\r\n            if (res.ok) {\r\n                const data = await res.json();\r\n                localStorage.setItem(\"token\", data.token);\r\n                window.location.href = \"/static/profile.html\";\r\n            } else {\r\n                alert(\"Invalid credentials\");\r\n            }\r\n        });\r\n    </script>\r\n</body>\r\n</html>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/static/login.html b/static/login.html
+--- a/static/login.html	(revision 3fe5a015b4f2ffb1eea099e6ba5c5df0c3f0b4b5)
++++ b/static/login.html	(date 1739450719602)
+@@ -36,6 +36,7 @@
+             if (res.ok) {
+                 const data = await res.json();
+                 localStorage.setItem("token", data.token);
++                localStorage.setItem("customerID", data.customerID);
+                 window.location.href = "/static/profile.html";
+             } else {
+                 alert("Invalid credentials");
+Index: static/register.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n    <meta charset=\"UTF-8\">\r\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\r\n    <title>Register</title>\r\n    <link href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css\" rel=\"stylesheet\">\r\n</head>\r\n<body class=\"d-flex justify-content-center align-items-center vh-100\">\r\n    <div class=\"container w-25\">\r\n        <h2 class=\"text-center\">Register</h2>\r\n        <form id=\"registerForm\">\r\n            <div class=\"mb-3\">\r\n                <label for=\"name\" class=\"form-label\">Name</label>\r\n                <input type=\"text\" class=\"form-control\" id=\"name\" required>\r\n            </div>\r\n            <div class=\"mb-3\">\r\n                <label for=\"email\" class=\"form-label\">Email</label>\r\n                <input type=\"email\" class=\"form-control\" id=\"email\" required>\r\n            </div>\r\n            <div class=\"mb-3\">\r\n                <label for=\"password\" class=\"form-label\">Password</label>\r\n                <input type=\"password\" class=\"form-control\" id=\"password\" required>\r\n            </div>\r\n            <button type=\"submit\" class=\"btn btn-primary w-100\">Register</button>\r\n        </form>\r\n    </div>\r\n    <script>\r\n        document.getElementById(\"registerForm\").addEventListener(\"submit\", async function(event) {\r\n            event.preventDefault();\r\n            const name = document.getElementById(\"name\").value;\r\n            const email = document.getElementById(\"email\").value;\r\n            const password = document.getElementById(\"password\").value;\r\n            \r\n            const res = await fetch(\"http://localhost:8080/register\", {\r\n                method: \"POST\",\r\n                headers: { \"Content-Type\": \"application/json\" },\r\n                body: JSON.stringify({ name, email, password })\r\n            });\r\n\r\n            if (res.ok) {\r\n                alert(\"Registration successful!\");\r\n                window.location.href = \"/static/login.html\";\r\n            } else {\r\n                alert(\"Registration failed\");\r\n            }\r\n        });\r\n    </script>\r\n</body>\r\n</html>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/static/register.html b/static/register.html
+--- a/static/register.html	(revision 3fe5a015b4f2ffb1eea099e6ba5c5df0c3f0b4b5)
++++ b/static/register.html	(date 1739450757018)
+@@ -39,6 +39,7 @@
+             });
+ 
+             if (res.ok) {
++                localStorage.setItem("customerID", data.customerID);
+                 alert("Registration successful!");
+                 window.location.href = "/static/login.html";
+             } else {
+Index: go.sum
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>github.com/bytedance/sonic v1.12.7 h1:CQU8pxOy9HToxhndH0Kx/S1qU/CuS9GnKYrGioDcU1Q=\r\ngithub.com/bytedance/sonic v1.12.7/go.mod h1:tnbal4mxOMju17EGfknm2XyYcpyCnIROYOEYuemj13I=\r\ngithub.com/bytedance/sonic/loader v0.1.1/go.mod h1:ncP89zfokxS5LZrJxl5z0UJcsk4M4yY2JpfqGeCtNLU=\r\ngithub.com/bytedance/sonic/loader v0.2.3 h1:yctD0Q3v2NOGfSWPLPvG2ggA2kV6TS6s4wioyEqssH0=\r\ngithub.com/bytedance/sonic/loader v0.2.3/go.mod h1:N8A3vUdtUebEY2/VQC0MyhYeKUFosQU6FxH2JmUe6VI=\r\ngithub.com/cloudwego/base64x v0.1.5 h1:XPciSp1xaq2VCSt6lF0phncD4koWyULpl5bUxbfCyP4=\r\ngithub.com/cloudwego/base64x v0.1.5/go.mod h1:0zlkT4Wn5C6NdauXdJRhSKRlJvmclQ1hhJgA0rcu/8w=\r\ngithub.com/cloudwego/iasm v0.2.0/go.mod h1:8rXZaNYT2n95jn+zTI1sDr+IgcD2GVs0nlbbQPiEFhY=\r\ngithub.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=\r\ngithub.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=\r\ngithub.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=\r\ngithub.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=\r\ngithub.com/gabriel-vasile/mimetype v1.4.8 h1:FfZ3gj38NjllZIeJAmMhr+qKL8Wu+nOoI3GqacKw1NM=\r\ngithub.com/gabriel-vasile/mimetype v1.4.8/go.mod h1:ByKUIKGjh1ODkGM1asKUbQZOLGrPjydw3hYPU2YU9t8=\r\ngithub.com/gin-contrib/cors v1.7.3 h1:hV+a5xp8hwJoTw7OY+a70FsL8JkVVFTXw9EcfrYUdns=\r\ngithub.com/gin-contrib/cors v1.7.3/go.mod h1:M3bcKZhxzsvI+rlRSkkxHyljJt1ESd93COUvemZ79j4=\r\ngithub.com/gin-contrib/sessions v1.0.2 h1:UaIjUvTH1cMeOdj3in6dl+Xb6It8RiKRF9Z1anbUyCA=\r\ngithub.com/gin-contrib/sessions v1.0.2/go.mod h1:KxKxWqWP5LJVDCInulOl4WbLzK2KSPlLesfZ66wRvMs=\r\ngithub.com/gin-contrib/sse v1.0.0 h1:y3bT1mUWUxDpW4JLQg/HnTqV4rozuW4tC9eFKTxYI9E=\r\ngithub.com/gin-contrib/sse v1.0.0/go.mod h1:zNuFdwarAygJBht0NTKiSi3jRf6RbqeILZ9Sp6Slhe0=\r\ngithub.com/gin-gonic/gin v1.10.0 h1:nTuyha1TYqgedzytsKYqna+DfLos46nTv2ygFy86HFU=\r\ngithub.com/gin-gonic/gin v1.10.0/go.mod h1:4PMNQiOhvDRa013RKVbsiNwoyezlm2rm0uX/T7kzp5Y=\r\ngithub.com/go-playground/assert/v2 v2.2.0 h1:JvknZsQTYeFEAhQwI4qEt9cyV5ONwRHC+lYKSsYSR8s=\r\ngithub.com/go-playground/assert/v2 v2.2.0/go.mod h1:VDjEfimB/XKnb+ZQfWdccd7VUvScMdVu0Titje2rxJ4=\r\ngithub.com/go-playground/locales v0.14.1 h1:EWaQ/wswjilfKLTECiXz7Rh+3BjFhfDFKv/oXslEjJA=\r\ngithub.com/go-playground/locales v0.14.1/go.mod h1:hxrqLVvrK65+Rwrd5Fc6F2O76J/NuW9t0sjnWqG1slY=\r\ngithub.com/go-playground/universal-translator v0.18.1 h1:Bcnm0ZwsGyWbCzImXv+pAJnYK9S473LQFuzCbDbfSFY=\r\ngithub.com/go-playground/universal-translator v0.18.1/go.mod h1:xekY+UJKNuX9WP91TpwSH2VMlDf28Uj24BCp08ZFTUY=\r\ngithub.com/go-playground/validator/v10 v10.24.0 h1:KHQckvo8G6hlWnrPX4NJJ+aBfWNAE/HH+qdL2cBpCmg=\r\ngithub.com/go-playground/validator/v10 v10.24.0/go.mod h1:GGzBIJMuE98Ic/kJsBXbz1x/7cByt++cQ+YOuDM5wus=\r\ngithub.com/goccy/go-json v0.10.4 h1:JSwxQzIqKfmFX1swYPpUThQZp/Ka4wzJdK0LWVytLPM=\r\ngithub.com/goccy/go-json v0.10.4/go.mod h1:oq7eo15ShAhp70Anwd5lgX2pLfOS3QCiwU/PULtXL6M=\r\ngithub.com/golang-jwt/jwt/v4 v4.0.0 h1:RAqyYixv1p7uEnocuy8P1nru5wprCh/MH2BIlW5z5/o=\r\ngithub.com/golang-jwt/jwt/v4 v4.0.0/go.mod h1:/xlHOz8bRuivTWchD4jCa+NbatV+wEUSzwAxVc6locg=\r\ngithub.com/google/go-cmp v0.5.5 h1:Khx7svrCpmxxtHBq5j2mp/xVjsi8hQMfNLvJFAlrGgU=\r\ngithub.com/google/go-cmp v0.5.5/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=\r\ngithub.com/google/gofuzz v1.0.0/go.mod h1:dBl0BpW6vV/+mYPU4Po3pmUjxk6FQPldtuIdl/M65Eg=\r\ngithub.com/gorilla/context v1.1.2 h1:WRkNAv2uoa03QNIc1A6u4O7DAGMUVoopZhkiXWA2V1o=\r\ngithub.com/gorilla/context v1.1.2/go.mod h1:KDPwT9i/MeWHiLl90fuTgrt4/wPcv75vFAZLaOOcbxM=\r\ngithub.com/gorilla/securecookie v1.1.2 h1:YCIWL56dvtr73r6715mJs5ZvhtnY73hBvEF8kXD8ePA=\r\ngithub.com/gorilla/securecookie v1.1.2/go.mod h1:NfCASbcHqRSY+3a8tlWJwsQap2VX5pwzwo4h3eOamfo=\r\ngithub.com/gorilla/sessions v1.2.2 h1:lqzMYz6bOfvn2WriPUjNByzeXIlVzURcPmgMczkmTjY=\r\ngithub.com/gorilla/sessions v1.2.2/go.mod h1:ePLdVu+jbEgHH+KWw8I1z2wqd0BAdAQh/8LRvBeoNcQ=\r\ngithub.com/jackc/pgpassfile v1.0.0 h1:/6Hmqy13Ss2zCq62VdNG8tM1wchn8zjSGOBJ6icpsIM=\r\ngithub.com/jackc/pgpassfile v1.0.0/go.mod h1:CEx0iS5ambNFdcRtxPj5JhEz+xB6uRky5eyVu/W2HEg=\r\ngithub.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a h1:bbPeKD0xmW/Y25WS6cokEszi5g+S0QxI/d45PkRi7Nk=\r\ngithub.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a/go.mod h1:5TJZWKEWniPve33vlWYSoGYefn3gLQRzjfDlhSJ9ZKM=\r\ngithub.com/jackc/pgx/v5 v5.5.5 h1:amBjrZVmksIdNjxGW/IiIMzxMKZFelXbUoPNb+8sjQw=\r\ngithub.com/jackc/pgx/v5 v5.5.5/go.mod h1:ez9gk+OAat140fv9ErkZDYFWmXLfV+++K0uAOiwgm1A=\r\ngithub.com/jackc/puddle/v2 v2.2.1 h1:RhxXJtFG022u4ibrCSMSiu5aOq1i77R3OHKNJj77OAk=\r\ngithub.com/jackc/puddle/v2 v2.2.1/go.mod h1:vriiEXHvEE654aYKXXjOvZM39qJ0q+azkZFrfEOc3H4=\r\ngithub.com/jinzhu/inflection v1.0.0 h1:K317FqzuhWc8YvSVlFMCCUb36O/S9MCKRDI7QkRKD/E=\r\ngithub.com/jinzhu/inflection v1.0.0/go.mod h1:h+uFLlag+Qp1Va5pdKtLDYj+kHp5pxUVkryuEj+Srlc=\r\ngithub.com/jinzhu/now v1.1.5 h1:/o9tlHleP7gOFmsnYNz3RGnqzefHA47wQpKrrdTIwXQ=\r\ngithub.com/jinzhu/now v1.1.5/go.mod h1:d3SSVoowX0Lcu0IBviAWJpolVfI5UJVZZ7cO71lE/z8=\r\ngithub.com/json-iterator/go v1.1.12 h1:PV8peI4a0ysnczrg+LtxykD8LfKY9ML6u2jnxaEnrnM=\r\ngithub.com/json-iterator/go v1.1.12/go.mod h1:e30LSqwooZae/UwlEbR2852Gd8hjQvJoHmT4TnhNGBo=\r\ngithub.com/klauspost/cpuid/v2 v2.0.9/go.mod h1:FInQzS24/EEf25PyTYn52gqo7WaD8xa0213Md/qVLRg=\r\ngithub.com/klauspost/cpuid/v2 v2.2.9 h1:66ze0taIn2H33fBvCkXuv9BmCwDfafmiIVpKV9kKGuY=\r\ngithub.com/klauspost/cpuid/v2 v2.2.9/go.mod h1:rqkxqrZ1EhYM9G+hXH7YdowN5R5RGN6NK4QwQ3WMXF8=\r\ngithub.com/knz/go-libedit v1.10.1/go.mod h1:MZTVkCWyz0oBc7JOWP3wNAzd002ZbM/5hgShxwh4x8M=\r\ngithub.com/kr/pretty v0.3.0 h1:WgNl7dwNpEZ6jJ9k1snq4pZsg7DOEN8hP9Xw0Tsjwk0=\r\ngithub.com/kr/pretty v0.3.0/go.mod h1:640gp4NfQd8pI5XOwp5fnNeVWj67G7CFk/SaSQn7NBk=\r\ngithub.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=\r\ngithub.com/kr/text v0.2.0/go.mod h1:eLer722TekiGuMkidMxC/pM04lWEeraHUUmBw8l2grE=\r\ngithub.com/leodido/go-urn v1.4.0 h1:WT9HwE9SGECu3lg4d/dIA+jxlljEa1/ffXKmRjqdmIQ=\r\ngithub.com/leodido/go-urn v1.4.0/go.mod h1:bvxc+MVxLKB4z00jd1z+Dvzr47oO32F/QSNjSBOlFxI=\r\ngithub.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWEY=\r\ngithub.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=\r\ngithub.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=\r\ngithub.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd h1:TRLaZ9cD/w8PVh93nsPXa1VrQ6jlwL5oN8l14QlcNfg=\r\ngithub.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=\r\ngithub.com/modern-go/reflect2 v1.0.2 h1:xBagoLtFs94CBntxluKeaWgTMpvLxC4ur3nMaC9Gz0M=\r\ngithub.com/modern-go/reflect2 v1.0.2/go.mod h1:yWuevngMOJpCy52FWWMvUC8ws7m/LJsjYzDa0/r8luk=\r\ngithub.com/pelletier/go-toml/v2 v2.2.3 h1:YmeHyLY8mFWbdkNWwpr+qIL2bEqT0o95WSdkNHvL12M=\r\ngithub.com/pelletier/go-toml/v2 v2.2.3/go.mod h1:MfCQTFTvCcUyyvvwm1+G6H/jORL20Xlb6rzQu9GuUkc=\r\ngithub.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=\r\ngithub.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=\r\ngithub.com/rogpeppe/go-internal v1.13.1 h1:KvO1DLK/DRN07sQ1LQKScxyZJuNnedQ5/wKSR38lUII=\r\ngithub.com/rogpeppe/go-internal v1.13.1/go.mod h1:uMEvuHeurkdAXX61udpOXGD/AzZDWNMNyH2VO9fmH0o=\r\ngithub.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=\r\ngithub.com/stretchr/objx v0.4.0/go.mod h1:YvHI0jy2hoMjB+UWwv71VJQ9isScKT/TqJzVSSt89Yw=\r\ngithub.com/stretchr/objx v0.5.0/go.mod h1:Yh+to48EsGEfYuaHDzXPcE3xhTkx73EhmCGUpEOglKo=\r\ngithub.com/stretchr/objx v0.5.2/go.mod h1:FRsXN1f5AsAjCGJKqEizvkpNtU+EGNCLh3NxZ/8L+MA=\r\ngithub.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=\r\ngithub.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=\r\ngithub.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=\r\ngithub.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=\r\ngithub.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=\r\ngithub.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=\r\ngithub.com/stretchr/testify v1.10.0 h1:Xv5erBjTwe/5IxqUQTdXv5kgmIvbHo3QQyRwhJsOfJA=\r\ngithub.com/stretchr/testify v1.10.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=\r\ngithub.com/twitchyliquid64/golang-asm v0.15.1 h1:SU5vSMR7hnwNxj24w34ZyCi/FmDZTkS4MhqMhdFk5YI=\r\ngithub.com/twitchyliquid64/golang-asm v0.15.1/go.mod h1:a1lVb/DtPvCB8fslRZhAngC2+aY1QWCk3Cedj/Gdt08=\r\ngithub.com/ugorji/go/codec v1.2.12 h1:9LC83zGrHhuUA9l16C9AHXAqEV/2wBQ4nkvumAE65EE=\r\ngithub.com/ugorji/go/codec v1.2.12/go.mod h1:UNopzCgEMSXjBc6AOMqYvWC1ktqTAfzJZUZgYf6w6lg=\r\ngolang.org/x/arch v0.13.0 h1:KCkqVVV1kGg0X87TFysjCJ8MxtZEIU4Ja/yXGeoECdA=\r\ngolang.org/x/arch v0.13.0/go.mod h1:FEVrYAQjsQXMVJ1nsMoVVXPZg6p2JE2mx8psSWTDQys=\r\ngolang.org/x/crypto v0.32.0 h1:euUpcYgM8WcP71gNpTqQCn6rC2t6ULUPiOzfWaXVVfc=\r\ngolang.org/x/crypto v0.32.0/go.mod h1:ZnnJkOaASj8g0AjIduWNlq2NRxL0PlBrbKVyZ6V/Ugc=\r\ngolang.org/x/net v0.34.0 h1:Mb7Mrk043xzHgnRM88suvJFwzVrRfHEHJEl5/71CKw0=\r\ngolang.org/x/net v0.34.0/go.mod h1:di0qlW3YNM5oh6GqDGQr92MyTozJPmybPK4Ev/Gm31k=\r\ngolang.org/x/sync v0.10.0 h1:3NQrjDixjgGwUOCaF8w2+VYHv0Ve/vGYSbdkTa98gmQ=\r\ngolang.org/x/sync v0.10.0/go.mod h1:Czt+wKu1gCyEFDUtn0jG5QVvpJ6rzVqr5aXyt9drQfk=\r\ngolang.org/x/sys v0.6.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=\r\ngolang.org/x/sys v0.29.0 h1:TPYlXGxvx1MGTn2GiZDhnjPA9wZzZeGKHHmKhHYvgaU=\r\ngolang.org/x/sys v0.29.0/go.mod h1:/VUhepiaJMQUp4+oa/7Zr1D23ma6VTLIYjOOTFZPUcA=\r\ngolang.org/x/text v0.21.0 h1:zyQAAkrwaneQ066sspRyJaG9VNi/YJ1NfzcGB3hZ/qo=\r\ngolang.org/x/text v0.21.0/go.mod h1:4IBbMaMmOPCJ8SecivzSH54+73PCFmPWxNTLm+vZkEQ=\r\ngolang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 h1:E7g+9GITq07hpfrRu66IVDexMakfv52eLZ2CXBWiKr4=\r\ngolang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=\r\ngoogle.golang.org/protobuf v1.36.3 h1:82DV7MYdb8anAVi3qge1wSnMDrnKK7ebr+I0hHRN1BU=\r\ngoogle.golang.org/protobuf v1.36.3/go.mod h1:9fA7Ob0pmnwhb644+1+CVWFRbNajQ6iRojtC/QF5bRE=\r\ngopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=\r\ngopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c h1:Hei/4ADfdWqJk1ZMxUNpqntNwaWcugrBjAiHlqqRiVk=\r\ngopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c/go.mod h1:JHkPIbrfpd72SG/EVd6muEfDQjcINNoR0C8j2r3qZ4Q=\r\ngopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=\r\ngopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=\r\ngopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=\r\ngorm.io/driver/postgres v1.5.11 h1:ubBVAfbKEUld/twyKZ0IYn9rSQh448EdelLYk9Mv314=\r\ngorm.io/driver/postgres v1.5.11/go.mod h1:DX3GReXH+3FPWGrrgffdvCk3DQ1dwDPdmbenSkweRGI=\r\ngorm.io/gorm v1.25.12 h1:I0u8i2hWQItBq1WfE0o2+WuL9+8L21K9e2HHSTE/0f8=\r\ngorm.io/gorm v1.25.12/go.mod h1:xh7N7RHfYlNc5EmcI/El95gXusucDrQnHXe0+CgWcLQ=\r\nnullprogram.com/x/optparse v1.0.0/go.mod h1:KdyPE+Igbe0jQUrVfMqDMeJQIJZEuyV7pjYmp6pbG50=\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/go.sum b/go.sum
+--- a/go.sum	(revision 3fe5a015b4f2ffb1eea099e6ba5c5df0c3f0b4b5)
++++ b/go.sum	(date 1739448785414)
+@@ -10,6 +10,8 @@
+ github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
+ github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
++github.com/dgrijalva/jwt-go v3.2.0+incompatible h1:7qlOGliEKZXTDg6OTjfoBKDXWrumCAMpl/TFQ4/5kLM=
++github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
+ github.com/gabriel-vasile/mimetype v1.4.8 h1:FfZ3gj38NjllZIeJAmMhr+qKL8Wu+nOoI3GqacKw1NM=
+ github.com/gabriel-vasile/mimetype v1.4.8/go.mod h1:ByKUIKGjh1ODkGM1asKUbQZOLGrPjydw3hYPU2YU9t8=
+ github.com/gin-contrib/cors v1.7.3 h1:hV+a5xp8hwJoTw7OY+a70FsL8JkVVFTXw9EcfrYUdns=
+Index: go.mod
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>module ClothesShop\r\n\r\ngo 1.23\r\n\r\nrequire (\r\n\tgithub.com/gin-gonic/gin v1.10.0\r\n\tgithub.com/golang-jwt/jwt/v4 v4.0.0\r\n\tgolang.org/x/crypto v0.32.0 // добавляем как прямую зависимость\r\n\tgorm.io/driver/postgres v1.5.11\r\n\tgorm.io/gorm v1.25.12\r\n)\r\n\r\nrequire github.com/gin-contrib/cors v1.7.3\r\n\r\nrequire (\r\n\tgithub.com/bytedance/sonic v1.12.7 // indirect\r\n\tgithub.com/bytedance/sonic/loader v0.2.3 // indirect\r\n\tgithub.com/cloudwego/base64x v0.1.5 // indirect\r\n\tgithub.com/gabriel-vasile/mimetype v1.4.8 // indirect\r\n\tgithub.com/gin-contrib/sessions v1.0.2 // indirect\r\n\tgithub.com/gin-contrib/sse v1.0.0 // indirect\r\n\tgithub.com/go-playground/locales v0.14.1 // indirect\r\n\tgithub.com/go-playground/universal-translator v0.18.1 // indirect\r\n\tgithub.com/go-playground/validator/v10 v10.24.0 // indirect\r\n\tgithub.com/goccy/go-json v0.10.4 // indirect\r\n\tgithub.com/gorilla/context v1.1.2 // indirect\r\n\tgithub.com/gorilla/securecookie v1.1.2 // indirect\r\n\tgithub.com/gorilla/sessions v1.2.2 // indirect\r\n\tgithub.com/jackc/pgpassfile v1.0.0 // indirect\r\n\tgithub.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect\r\n\tgithub.com/jackc/pgx/v5 v5.5.5 // indirect\r\n\tgithub.com/jackc/puddle/v2 v2.2.1 // indirect\r\n\tgithub.com/jinzhu/inflection v1.0.0 // indirect\r\n\tgithub.com/jinzhu/now v1.1.5 // indirect\r\n\tgithub.com/json-iterator/go v1.1.12 // indirect\r\n\tgithub.com/klauspost/cpuid/v2 v2.2.9 // indirect\r\n\tgithub.com/kr/text v0.2.0 // indirect\r\n\tgithub.com/leodido/go-urn v1.4.0 // indirect\r\n\tgithub.com/mattn/go-isatty v0.0.20 // indirect\r\n\tgithub.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect\r\n\tgithub.com/modern-go/reflect2 v1.0.2 // indirect\r\n\tgithub.com/pelletier/go-toml/v2 v2.2.3 // indirect\r\n\tgithub.com/rogpeppe/go-internal v1.13.1 // indirect\r\n\tgithub.com/twitchyliquid64/golang-asm v0.15.1 // indirect\r\n\tgithub.com/ugorji/go/codec v1.2.12 // indirect\r\n\tgolang.org/x/arch v0.13.0 // indirect\r\n\tgolang.org/x/net v0.34.0 // indirect\r\n\tgolang.org/x/sync v0.10.0 // indirect\r\n\tgolang.org/x/sys v0.29.0 // indirect\r\n\tgolang.org/x/text v0.21.0 // indirect\r\n\tgoogle.golang.org/protobuf v1.36.3 // indirect\r\n\tgopkg.in/yaml.v3 v3.0.1 // indirect\r\n)\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/go.mod b/go.mod
+--- a/go.mod	(revision 3fe5a015b4f2ffb1eea099e6ba5c5df0c3f0b4b5)
++++ b/go.mod	(date 1739448785428)
+@@ -3,6 +3,7 @@
+ go 1.23
+ 
+ require (
++	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+ 	github.com/gin-gonic/gin v1.10.0
+ 	github.com/golang-jwt/jwt/v4 v4.0.0
+ 	golang.org/x/crypto v0.32.0 // добавляем как прямую зависимость
+Index: internal/services/auth_service.go
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/internal/services/auth_service.go b/internal/services/auth_service.go
+new file mode 100644
+--- /dev/null	(date 1739448785374)
++++ b/internal/services/auth_service.go	(date 1739448785374)
+@@ -0,0 +1,25 @@
++package services
++
++import (
++	"ClothesShop/internal/models"
++	"ClothesShop/internal/repository"
++	"errors"
++)
++
++type AuthService struct {
++	UserRepo *repository.UserRepository
++}
++
++// Аутентификация пользователя
++func (s *AuthService) AuthenticateUser(username, password string) (*models.User, error) {
++	user, err := s.UserRepo.GetUserByUsername(username)
++	if err != nil {
++		return nil, errors.New("user not found")
++	}
++
++	if user.Password != password {
++		return nil, errors.New("invalid credentials")
++	}
++
++	return user, nil
++}
+Index: internal/models/loginRequest.go
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/internal/models/loginRequest.go b/internal/models/loginRequest.go
+new file mode 100644
+--- /dev/null	(date 1739448785389)
++++ b/internal/models/loginRequest.go	(date 1739448785389)
+@@ -0,0 +1,6 @@
++package models
++
++type LoginRequest struct {
++	Username string `json:"username" binding:"required"`
++	Password string `json:"password" binding:"required"`
++}
+Index: routes/login_routes.go
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/routes/login_routes.go b/routes/login_routes.go
+new file mode 100644
+--- /dev/null	(date 1739448785443)
++++ b/routes/login_routes.go	(date 1739448785443)
+@@ -0,0 +1,13 @@
++package routes
++
++import (
++	"ClothesShop/internal/handlers"
++	"github.com/gin-gonic/gin"
++)
++
++func SetupAuthRoutes(router *gin.Engine, authHandler *handlers.AuthHandler) {
++	authRoutes := router.Group("/auth")
++	{
++		authRoutes.POST("/login", authHandler.Login)
++	}
++}
+Index: internal/handlers/auth_handler.go
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/internal/handlers/auth_handler.go b/internal/handlers/auth_handler.go
+new file mode 100644
+--- /dev/null	(date 1739448785462)
++++ b/internal/handlers/auth_handler.go	(date 1739448785462)
+@@ -0,0 +1,59 @@
++package handlers
++
++import (
++	"ClothesShop/internal/models"
++	"ClothesShop/internal/services"
++	"github.com/dgrijalva/jwt-go"
++	"github.com/gin-gonic/gin"
++	"net/http"
++	"time"
++)
++
++type AuthHandler struct {
++	Service *services.AuthService
++}
++
++func (h *AuthHandler) Login(c *gin.Context) {
++	var loginRequest models.LoginRequest
++	if err := c.ShouldBindJSON(&loginRequest); err != nil {
++		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
++		return
++	}
++
++	// Проверка пользователя
++	user, err := h.Service.AuthenticateUser(loginRequest.Username, loginRequest.Password)
++	if err != nil {
++		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
++		return
++	}
++
++	// Генерация токена
++	token, err := generateToken(user)
++	if err != nil {
++		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
++		return
++	}
++
++	c.JSON(http.StatusOK, gin.H{"token": token})
++}
++
++// Функция для генерации JWT токена
++func generateToken(user *models.User) (string, error) {
++	// Задайте секретный ключ для подписи токена
++	secretKey := []byte("your-secret-key")
++
++	// Установите параметры для токена
++	claims := jwt.MapClaims{
++		"sub": user.ID,
++		"iat": time.Now().Unix(),
++		"exp": time.Now().Add(time.Hour * 24).Unix(), // Истекает через 24 часа
++	}
++	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
++
++	// Подпись токена
++	signedToken, err := token.SignedString(secretKey)
++	if err != nil {
++		return "", err
++	}
++	return signedToken, nil
++}
