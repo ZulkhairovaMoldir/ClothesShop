@@ -35,8 +35,13 @@
 
             if (res.ok) {
                 const data = await res.json();
-                localStorage.setItem("token", data.token);
-                window.location.href = "/static/profile.html";
+                localStorage.setItem("user", JSON.stringify({ 
+                    token: data.token, 
+                    customer_id: data.customer_id 
+                }));
+
+                // Redirect to index.html to ensure UI updates
+                window.location.href = "/static/index.html";
             } else {
                 alert("Invalid credentials");
             }

@@ -163,6 +163,7 @@
 
             if (user && user.token) {
                 authButtons.innerHTML = `
+                    <button class="btn btn-outline-dark" onclick="location.href='/static/profile.html'">Profile</button>
                     <button class="btn btn-outline-dark" onclick="logout()">Logout</button>
                 `;
             } else {
@@ -178,7 +179,9 @@
             location.reload();
         }
 
-        checkAuth();
+        // Ensure this function runs when the page loads
+        window.onload = checkAuth;
+
         fetchProducts();
         fetchCart();
     </script>
