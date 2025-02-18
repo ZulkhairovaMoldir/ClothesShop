@@ -9,23 +9,12 @@ type CartService struct {
     Repo *repository.CartRepository
 }
 
+func NewCartService(repo *repository.CartRepository) *CartService {
+    return &CartService{Repo: repo}
+}
+
 func (s *CartService) AddToCart(cart *models.Cart) error {
-    var existingCart models.Cart
-    query := s.Repo.DB.Where("product_id = ?", cart.ProductID)
-
-    if cart.CustomerID != nil {
-        query = query.Where("customer_id = ?", *cart.CustomerID)
-    } else if cart.SessionID != nil {
-        query = query.Where("session_id = ?", *cart.SessionID)
-    }
-
-    err := query.First(&existingCart).Error
-    if err == nil {
-        existingCart.Quantity += cart.Quantity
-        return s.Repo.DB.Save(&existingCart).Error
-    }
-
-    return s.Repo.DB.Create(cart).Error
+    return s.Repo.AddItemToCart(cart)
 }
 
 func (s *CartService) UpdateCartQuantity(productID uint, newQuantity int, sessionID *string, customerID *uint) (*models.Cart, error) {

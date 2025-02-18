@@ -72,9 +72,15 @@
 
         async function fetchCart() {
             try {
+                const user = JSON.parse(localStorage.getItem("user"));
+                const headers = { "Content-Type": "application/json" };
+                if (user && user.token) {
+                    headers["Authorization"] = `Bearer ${user.token}`;
+                }
+
                 const res = await fetch(`${API_BASE}/cart`, {
                     method: "GET",
-                    headers: { "Content-Type": "application/json" }
+                    headers: headers
                 });
 
                 if (!res.ok) {
@@ -91,6 +97,11 @@
                 }
 
                 const cartItemsContainer = document.getElementById("cart-items");
+                if (!cartItemsContainer) {
+                    console.error("Cart items container not found");
+                    return;
+                }
+
                 cartItemsContainer.innerHTML = "";
 
                 cartData.forEach(item => {

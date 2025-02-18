@@ -35,8 +35,8 @@
 
             if (res.ok) {
                 const data = await res.json();
-                localStorage.setItem("token", data.token);
-                window.location.href = "/static/profile.html";
+                localStorage.setItem("user", JSON.stringify(data)); // Store the user data including token
+                window.location.href = "/static/index.html"; // Redirect to home page after login
             } else {
                 alert("Invalid credentials");
             }

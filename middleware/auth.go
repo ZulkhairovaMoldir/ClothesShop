@@ -72,8 +72,8 @@ func AuthMiddleware() gin.HandlerFunc {
             return
         }
 
-        customerID := uint(userID) // ✅ Ensure correct type
-        c.Set("customerID", customerID) // ✅ Fix: Use "customerID" instead of "userID"
+        customerID := uint(userID) // Ensure correct type
+        c.Set("customerID", customerID) // Use "customerID" instead of "userID"
 
         c.Next()
     }

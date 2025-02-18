@@ -68,13 +68,37 @@
         const API_BASE = "http://localhost:8080";
 
         async function fetchProducts() {
-            const res = await fetch(`${API_BASE}/products`);
-            const products = await res.json();
-            
+            try {
+                const res = await fetch(`${API_BASE}/products`);
+                if (!res.ok) {
+                    console.error("Failed to fetch products");
+                    return;
+                }
+
+                const products = await res.json();
+                console.log("✅ Fetched products:", products);
+
+                // Ensure product IDs are logged
+                products.forEach(product => {
+                    console.log(`🔹 Product ID: ${product.ID}, Name: ${product.Name}`);
+                });
+
+                renderProducts(products);
+            } catch (error) {
+                console.error("❌ Error fetching products:", error);
+            }
+        }
+
+        function renderProducts(products) {
             const productsContainer = document.getElementById("products");
-            productsContainer.innerHTML = "";
-            
+            productsContainer.innerHTML = ""; // Clear previous content
+
             products.forEach(product => {
+                if (!product.ID) {
+                    console.error("❌ Missing product ID:", product);
+                    return; // Skip this product if ID is missing
+                }
+
                 const div = document.createElement("div");
                 div.className = "col mb-5";
                 div.innerHTML = `
@@ -83,11 +107,16 @@
                         <div class="card-body p-4">
                             <div class="text-center">
                                 <h5 class="fw-bolder">${product.Name}</h5>
-                                $${product.Price}
+                                <p>$${product.Price}</p>
                             </div>
                         </div>
                         <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
-                            <div class="text-center"><button id="add-btn-${product.ID}" class="btn btn-outline-dark mt-auto" onclick="addToCart(${product.ID})">Add to Cart</button></div>
+                            <div class="text-center">
+                                <button id="add-btn-${product.ID}" class="btn btn-outline-dark mt-auto" 
+                                    onclick="addToCart(${product.ID})">
+                                    Add to Cart
+                                </button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -97,9 +126,16 @@
 
         async function fetchCart() {
             try {
+                const user = JSON.parse(localStorage.getItem("user"));
+                const headers = { "Content-Type": "application/json" };
+
+                if (user && user.token) {
+                    headers["Authorization"] = `Bearer ${user.token}`;
+                }
+
                 const res = await fetch(`${API_BASE}/cart`, {
                     method: "GET",
-                    headers: { "Content-Type": "application/json" }
+                    headers: headers
                 });
 
                 if (!res.ok) {
@@ -108,52 +144,147 @@
                 }
 
                 const cartData = await res.json();
-
-                // Ensure cartData is an array
-                if (!Array.isArray(cartData)) {
-                    console.error("Cart response is not an array:", cartData);
-                    return;
-                }
-
-                const cartCount = cartData.reduce((acc, item) => acc + item.quantity, 0);
-                document.getElementById("cart-count").textContent = cartCount;
-
-                // Update the "Add to Cart" buttons
-                cartData.forEach(item => {
-                    const btn = document.getElementById(`add-btn-${item.product_id}`);
-                    if (btn) {
-                        btn.innerText = "Added to Cart";
-                        btn.disabled = true;
-                    }
-                });
+                renderCart(cartData);
             } catch (error) {
                 console.error("Error fetching cart:", error);
             }
         }
 
-        async function addToCart(productId) {
-            let user = JSON.parse(localStorage.getItem("user")); // Get logged-in user
-            let bodyData = { productId, quantity: 1 };
-
-            if (user && user.customer_id) {
-                bodyData.customer_id = user.customer_id; // Send customer_id if logged in
+        function renderCart(cartData) {
+            const cartItemsContainer = document.getElementById("cart-items");
+            if (!cartItemsContainer) {
+                console.error("Cart items container not found");
+                return;
             }
 
-            await fetch(`${API_BASE}/cart/add`, {
+            cartItemsContainer.innerHTML = "";
+
+            cartData.forEach(item => {
+                const div = document.createElement("div");
+                div.className = "col-12 mb-4";
+                div.innerHTML = `
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <img class="img-fluid" src="https://dummyimage.com/450x300/dee2e6/6c757d.jpg" alt="..." />
+                                </div>
+                                <div class="col-md-8">
+                                    <h5 class="fw-bolder">${item.name}</h5>
+                                    <p id="quantity-${item.product_id}">Quantity: ${item.quantity}</p>
+                                    <p>Price: $${item.price}</p>
+                                    <button class="btn btn-danger" onclick="removeFromCart(${item.product_id})">Remove</button>
+                                    <button class="btn btn-secondary" onclick="decrementQuantity(${item.product_id})">-</button>
+                                    <button class="btn btn-secondary" onclick="incrementQuantity(${item.product_id})">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                cartItemsContainer.appendChild(div);
+            });
+
+            const cartCount = cartData.reduce((acc, item) => acc + item.quantity, 0);
+            document.getElementById("cart-count").textContent = cartCount;
+        }
+
+        async function addToCart(productId) {
+            if (!productId || productId <= 0) {
+                console.error("❌ Invalid product ID:", productId);
+                return; // Prevent sending invalid requests
+            }
+
+            const user = JSON.parse(localStorage.getItem("user"));
+            const headers = { "Content-Type": "application/json" };
+            if (user && user.token) {
+                headers["Authorization"] = `Bearer ${user.token}`;
+            }
+
+            const bodyData = { product_id: productId, quantity: 1 };
+
+            console.log("🚀 Sending request to add product:", bodyData);
+
+            const res = await fetch(`${API_BASE}/cart/add`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: headers,
                 body: JSON.stringify(bodyData),
             });
+
+            if (!res.ok) {
+                console.error("❌ Failed to add item:", await res.text());
+            }
 
             fetchCart();
         }
 
         async function removeFromCart(productId) {
-            await fetch(`${API_BASE}/cart/remove/${productId}`, {
-                method: "DELETE",
-                headers: { "Content-Type": "application/json" }
-            });
-            fetchCart();
+            try {
+                const user = JSON.parse(localStorage.getItem("user"));
+                const headers = { "Content-Type": "application/json" };
+                if (user && user.token) {
+                    headers["Authorization"] = `Bearer ${user.token}`;
+                }
+
+                const res = await fetch(`${API_BASE}/cart/remove`, {
+                    method: "DELETE",
+                    headers: headers,
+                    body: JSON.stringify({ product_id: productId })
+                });
+
+                if (!res.ok) {
+                    console.error("Failed to remove item:", await res.text());
+                    return;
+                }
+
+                fetchCart();
+            } catch (error) {
+                console.error("Error removing item:", error);
+            }
+        }
+
+        function incrementQuantity(productId) {
+            const quantityElement = document.getElementById(`quantity-${productId}`);
+            let currentQuantity = parseInt(quantityElement.innerText.split(": ")[1]);
+
+            // ✅ Fix: Update UI first and prevent multiple calls
+            quantityElement.innerText = `Quantity: ${currentQuantity + 1}`;
+
+            updateQuantity(productId, currentQuantity + 1);
+        }
+
+        function decrementQuantity(productId) {
+            const quantityElement = document.getElementById(`quantity-${productId}`);
+            let currentQuantity = parseInt(quantityElement.innerText.split(": ")[1]);
+
+            if (currentQuantity > 1) {
+                // ✅ Fix: Update UI before making API call
+                quantityElement.innerText = `Quantity: ${currentQuantity - 1}`;
+                updateQuantity(productId, currentQuantity - 1);
+            } else {
+                removeFromCart(productId);
+            }
+        }
+
+        async function updateQuantity(productId, newQuantity) {
+            try {
+                const response = await fetch(`${API_BASE}/cart/update`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ product_id: productId, quantity: newQuantity }),
+                });
+
+                const result = await response.json();
+                console.log("Updated Cart Response:", result);
+
+                if (result.quantity !== undefined) {
+                    const quantityElement = document.getElementById(`quantity-${productId}`);
+                    quantityElement.innerText = `Quantity: ${result.quantity}`;
+                }
+
+                fetchCart(); // Refresh cart data from the backend
+            } catch (error) {
+                console.error("Error updating quantity:", error);
+            }
         }
 
         function checkAuth() {
@@ -162,10 +293,13 @@
             const authButtons = document.getElementById("auth-buttons");
 
             if (user && user.token) {
+                console.log("User is authenticated. Token:", user.token); // Log the token to the console
                 authButtons.innerHTML = `
+                    <button class="btn btn-outline-dark" onclick="location.href='/static/profile.html'">Profile</button>
                     <button class="btn btn-outline-dark" onclick="logout()">Logout</button>
                 `;
             } else {
+                console.log("User is not authenticated.");
                 authButtons.innerHTML = `
                     <button class="btn btn-outline-dark" onclick="location.href='/static/login.html'">Login</button>
                     <button class="btn btn-outline-dark" onclick="location.href='/static/register.html'">Register</button>
@@ -178,9 +312,11 @@
             location.reload();
         }
 
-        checkAuth();
-        fetchProducts();
-        fetchCart();
+        window.onload = function() {
+            checkAuth();
+            fetchProducts();
+            fetchCart();
+        };
     </script>
 </body>
 </html>

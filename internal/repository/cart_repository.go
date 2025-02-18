@@ -57,6 +57,9 @@ func (r *CartRepository) GetCartByCustomerID(customerID uint) ([]map[string]inte
     `
 
     err := r.DB.Raw(query, customerID).Scan(&cartItems).Error
+    if cartItems == nil {
+        cartItems = []map[string]interface{}{}
+    }
     return cartItems, err
 }
 
@@ -73,6 +76,9 @@ func (r *CartRepository) GetCartBySessionID(sessionID string) ([]map[string]inte
     `
 
     err := r.DB.Raw(query, sessionID).Scan(&cartItems).Error
+    if cartItems == nil {
+        cartItems = []map[string]interface{}{}
+    }
     return cartItems, err
 }
 

@@ -17,10 +17,21 @@
         const API_BASE = "http://localhost:8080";
 
         async function fetchProfile() {
-            const token = localStorage.getItem("token");
+            const user = JSON.parse(localStorage.getItem("user"));
+            if (!user || !user.token) {
+                window.location.href = "/static/login.html";
+                return;
+            }
+
             const res = await fetch(`${API_BASE}/profile`, {
-                headers: { "Authorization": `Bearer ${token}` }
+                headers: { "Authorization": `Bearer ${user.token}` }
             });
+
+            if (!res.ok) {
+                console.error("Failed to fetch profile");
+                return;
+            }
+
             const profile = await res.json();
             
             const profileContainer = document.getElementById("profile");
@@ -31,7 +42,7 @@
         }
 
         function logout() {
-            localStorage.removeItem("token");
+            localStorage.removeItem("user");
             window.location.href = "/static/login.html";
         }
 

@@ -7,6 +7,7 @@ import (
     "encoding/hex"
     "github.com/gin-contrib/sessions"
     "github.com/gin-gonic/gin"
+    "io"
     "log"
     "net/http"
     "strconv"
@@ -17,19 +18,39 @@ type CartHandlers struct {
 }
 
 func (h *CartHandlers) AddItem(c *gin.Context) {
+    // Log the raw request body
+    body, err := io.ReadAll(c.Request.Body)
+    if err != nil {
+        log.Println("❌ Error reading request body:", err)
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data"})
+        return
+    }
+    log.Println("🚀 Raw request body:", string(body))
+
     var cart models.Cart
     if err := c.ShouldBindJSON(&cart); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data"})
+        return
+    }
+
+    log.Println("🚀 Incoming cart request:", cart)
+
+    if cart.ProductID == 0 {
+        log.Println("❌ Invalid product_id received:", cart.ProductID)
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
         return
     }
 
     session := sessions.Default(c)
     customerID, exists := c.Get("customerID")
 
+    log.Println("🚀 Checking customerID:", customerID, "Exists:", exists)
+    log.Println("🛠️ SessionID:", session.Get("sessionID"))
+
     if exists {
         customerIDValue := customerID.(uint)
         cart.CustomerID = &customerIDValue
-        cart.SessionID = nil  
+        cart.SessionID = nil
     } else {
         sessionID := session.Get("sessionID")
         if sessionID == nil {
@@ -41,7 +62,9 @@ func (h *CartHandlers) AddItem(c *gin.Context) {
         cart.SessionID = &sessionIDStr
     }
 
-    if err := h.Service.AddToCart(&cart); err != nil {
+    err = h.Service.AddToCart(&cart)
+    if err != nil {
+        log.Println("❌ Error adding to cart:", err)
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
     }

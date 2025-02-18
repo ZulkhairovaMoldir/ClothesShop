@@ -26,7 +26,7 @@ func main() {
     // Initialize User-related components
     userRepo := &repository.UserRepository{DB: config.DB}
     cartRepo := &repository.CartRepository{DB: config.DB}
-    cartService := &services.CartService{Repo: cartRepo}
+    cartService := services.NewCartService(cartRepo)
     userService := &services.UserService{Repo: userRepo, CartService: cartService}
     userHandlers := &handlers.UserHandlers{Service: userService, CartService: cartService}
     authHandler := &handlers.AuthHandler{Service: userService, CartService: cartService}
@@ -80,7 +80,7 @@ func main() {
         public.GET("/users", userHandlers.GetUsers)
         public.GET("/users/:id", userHandlers.GetUser)
         public.GET("/cart", cartHandlers.GetCart)
-        public.POST("/cart/add", cartHandlers.AddItem)
+        public.POST("/cart/add", cartHandlers.AddItem)  // ✅ Public route for both guests and logged-in users
         public.POST("/cart/update", cartHandlers.UpdateItemQuantity)
         public.DELETE("/cart/remove/:id", cartHandlers.RemoveItem)
         public.GET("/products", productHandlers.GetProducts)
@@ -98,7 +98,8 @@ func main() {
         protected.DELETE("/users/:id", userHandlers.DeleteUser)
 
         // Cart routes
-        protected.DELETE("/cart/item/:id", cartHandlers.RemoveItem)
+        // Remove duplicate DELETE route for cart items
+        // protected.DELETE("/cart/item/:id", cartHandlers.RemoveItem)
 
         // Product routes
         protected.POST("/products", productHandlers.CreateProduct)
