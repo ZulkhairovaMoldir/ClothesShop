@@ -19,7 +19,7 @@ type UserHandlers struct {
 
 type AuthHandler struct {
     Service *services.UserService
-    CartService *services.CartService // Add this line
+    CartService *services.CartService 
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
@@ -28,26 +28,22 @@ func (h *AuthHandler) Login(c *gin.Context) {
         Password string `json:"password"`
     }
 
-    // Parse and validate the input
     if err := c.ShouldBindJSON(&req); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
         return
     }
 
-    // Find the user by email
     user, err := h.Service.FindByEmail(req.Email)
     if err != nil {
         c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email"})
         return
     }
 
-    // Check the password
     if err := utils.CheckPasswordHash(req.Password, user.Password); err != nil {
         c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid password"})
         return
     }
 
-    // Generate JWT token
     token, err := middleware.GenerateJWT(user.ID)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
@@ -58,16 +54,14 @@ func (h *AuthHandler) Login(c *gin.Context) {
     sessionID, sessionExists := session.Get("sessionID").(string)
 
     if sessionExists && sessionID != "" {
-        // Merge guest cart into the user's cart
         err := h.CartService.MergeGuestCartToUser(sessionID, user.ID)
         if err != nil {
             log.Printf("Failed to merge guest cart: %v", err)
         }
-        session.Delete("sessionID") // Clear session cart
+        session.Delete("sessionID") 
         session.Save()
     }
 
-    // Set customerID in session
     session.Set("customerID", user.ID)
     session.Save()
 
@@ -82,20 +76,17 @@ func (h *UserHandlers) CreateUser(c *gin.Context) {
         Password string `json:"password" binding:"required"`
     }
 
-    // Parse and validate the input
     if err := c.ShouldBindJSON(&req); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
         return
     }
 
-    // Hash the password
     hashedPassword, err := utils.HashPassword(req.Password)
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
         return
     }
 
-    // Create and save the user
     user := &models.User{
         Name:     req.Name,
         Email:    req.Email,

@@ -19,7 +19,6 @@
         async function fetchProfile() {
             const user = JSON.parse(localStorage.getItem("user"));
             if (!user || !user.token) {
-                // Redirect to login if no token found
                 window.location.href = "/static/login.html";
                 return;
             }
@@ -36,7 +35,7 @@
                 `;
             } else {
                 alert("Failed to load profile");
-                logout(); // Force logout if the token is invalid
+                logout(); 
             }
         }
 

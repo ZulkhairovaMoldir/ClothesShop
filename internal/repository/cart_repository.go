@@ -11,13 +11,11 @@ type CartRepository struct {
     DB *gorm.DB
 }
 
-// Add an item to the cart
 func (r *CartRepository) AddItemToCart(cart *models.Cart) error {
     var existingCart models.Cart
     tx := r.DB.Begin()
     defer tx.Commit()
 
-    // Ensure query includes correct session or customer ID
     query := tx.Where("product_id = ?", cart.ProductID)
     if cart.CustomerID != nil {
         query = query.Where("customer_id = ?", *cart.CustomerID)
@@ -32,11 +30,9 @@ func (r *CartRepository) AddItemToCart(cart *models.Cart) error {
 
     err := query.First(&existingCart).Error
     if err == nil {
-        // Product exists, update quantity properly
         existingCart.Quantity += cart.Quantity
         return tx.Save(&existingCart).Error
     } else if errors.Is(err, gorm.ErrRecordNotFound) {
-        // Product does not exist, insert as a new row
         return tx.Create(cart).Error
     } else {
         tx.Rollback()
@@ -44,7 +40,6 @@ func (r *CartRepository) AddItemToCart(cart *models.Cart) error {
     }
 }
 
-// Retrieve cart items by Customer ID (for logged-in users)
 func (r *CartRepository) GetCartByCustomerID(customerID uint) ([]map[string]interface{}, error) {
     var cartItems []map[string]interface{}
 
@@ -60,7 +55,6 @@ func (r *CartRepository) GetCartByCustomerID(customerID uint) ([]map[string]inte
     return cartItems, err
 }
 
-// Retrieve cart items by Session ID (for guest users)
 func (r *CartRepository) GetCartBySessionID(sessionID string) ([]map[string]interface{}, error) {
     var cartItems []map[string]interface{}
 
@@ -76,21 +70,17 @@ func (r *CartRepository) GetCartBySessionID(sessionID string) ([]map[string]inte
     return cartItems, err
 }
 
-// Remove item from user cart
 func (r *CartRepository) RemoveItemFromUserCart(cartItemID uint, customerID uint) error {
     return r.DB.Where("id = ? AND customer_id = ?", cartItemID, customerID).Delete(&models.Cart{}).Error
 }
 
-// Remove item from guest cart
 func (r *CartRepository) RemoveItemFromGuestCart(cartItemID uint, sessionID string) error {
     return r.DB.Where("id = ? AND session_id = ?", cartItemID, sessionID).Delete(&models.Cart{}).Error
 }
 
-// Transfer guest cart to user cart
 func (r *CartRepository) MergeGuestCartToUser(sessionID string, userID uint) error {
     tx := r.DB.Begin()
 
-    // Step 1: Check if guest cart has items
     var guestCartItems []models.Cart
     err := tx.Where("session_id = ?", sessionID).Find(&guestCartItems).Error
     if err != nil {
@@ -104,16 +94,14 @@ func (r *CartRepository) MergeGuestCartToUser(sessionID string, userID uint) err
 
         err := query.First(&existingItem).Error
         if err == nil {
-            // If item exists in user's cart, update quantity
             existingItem.Quantity += item.Quantity
             if err := tx.Save(&existingItem).Error; err != nil {
                 tx.Rollback()
                 return err
             }
         } else if errors.Is(err, gorm.ErrRecordNotFound) {
-            // If item does not exist, assign it to the user
             item.CustomerID = &userID
-            item.SessionID = nil // Remove session ID
+            item.SessionID = nil 
             if err := tx.Save(&item).Error; err != nil {
                 tx.Rollback()
                 return err
@@ -124,7 +112,6 @@ func (r *CartRepository) MergeGuestCartToUser(sessionID string, userID uint) err
         }
     }
 
-    // Step 3: Delete old session cart records
     if err := tx.Where("session_id = ?", sessionID).Delete(&models.Cart{}).Error; err != nil {
         tx.Rollback()
         return err

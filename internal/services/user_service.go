@@ -8,13 +8,13 @@ import (
 
 type UserService struct {
     Repo        *repository.UserRepository
-    CartService *CartService // Add CartService field
+    CartService *CartService 
 }
 
 func NewUserService(userRepo *repository.UserRepository, cartService *CartService) *UserService {
     return &UserService{
         Repo:        userRepo,
-        CartService: cartService, // Initialize CartService
+        CartService: cartService, 
     }
 }
 

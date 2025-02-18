@@ -6,17 +6,12 @@
     <meta name="description" content="" />
     <meta name="author" content="" />
     <title>Cart - Clothes Shop</title>
-    <!-- Favicon-->
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <!-- Bootstrap icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css" rel="stylesheet" />
-    <!-- Custom CSS -->
     <link href="/static/styles.css" rel="stylesheet" />
 </head>
 <body>
-    <!-- Navigation-->
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container px-4 px-lg-5">
             <a class="navbar-brand" href="/">Clothes Shop</a>
@@ -40,7 +35,6 @@
             </div>
         </div>
     </nav>
-    <!-- Header-->
     <header class="bg-dark py-5">
         <div class="container px-4 px-lg-5 my-5">
             <div class="text-center text-white">
@@ -49,7 +43,6 @@
             </div>
         </div>
     </header>
-    <!-- Cart Section-->
     <section class="py-5">
         <div class="container px-4 px-lg-5 mt-5">
             <div class="row gx-4 gx-lg-5" id="cart-items">
@@ -60,21 +53,27 @@
             </div>
         </div>
     </section>
-    <!-- Footer-->
     <footer class="py-5 bg-dark">
         <div class="container"><p class="m-0 text-center text-white">Copyright &copy; Your Website 2023</p></div>
     </footer>
-    <!-- Bootstrap core JS-->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Core theme JS-->
     <script>
         const API_BASE = "http://localhost:8080";
 
         async function fetchCart() {
             try {
+                const user = JSON.parse(localStorage.getItem("user"));
+                if (!user || !user.token) {
+                    console.error("User not logged in");
+                    return;
+                }
+
                 const res = await fetch(`${API_BASE}/cart`, {
                     method: "GET",
-                    headers: { "Content-Type": "application/json" }
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${user.token}`
+                    }
                 });
 
                 if (!res.ok) {
@@ -84,7 +83,6 @@
 
                 const cartData = await res.json();
 
-                // Ensure cartData is an array
                 if (!Array.isArray(cartData)) {
                     console.error("Cart response is not an array:", cartData);
                     return;
@@ -129,7 +127,6 @@
             const quantityElement = document.getElementById(`quantity-${productId}`);
             let currentQuantity = parseInt(quantityElement.innerText.split(": ")[1]);
 
-            // ✅ Fix: Update UI first and prevent multiple calls
             quantityElement.innerText = `Quantity: ${currentQuantity + 1}`;
 
             updateQuantity(productId, currentQuantity + 1);
@@ -140,7 +137,6 @@
             let currentQuantity = parseInt(quantityElement.innerText.split(": ")[1]);
 
             if (currentQuantity > 1) {
-                // ✅ Fix: Update UI before making API call
                 quantityElement.innerText = `Quantity: ${currentQuantity - 1}`;
                 updateQuantity(productId, currentQuantity - 1);
             } else {
@@ -150,9 +146,18 @@
 
         async function updateQuantity(productId, newQuantity) {
             try {
+                const user = JSON.parse(localStorage.getItem("user"));
+                if (!user || !user.token) {
+                    console.error("User not logged in");
+                    return;
+                }
+
                 const response = await fetch(`${API_BASE}/cart/update`, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${user.token}`
+                    },
                     body: JSON.stringify({ product_id: productId, quantity: newQuantity }),
                 });
 
@@ -164,7 +169,7 @@
                     quantityElement.innerText = `Quantity: ${result.quantity}`;
                 }
 
-                fetchCart(); // Refresh cart data from the backend
+                fetchCart(); 
             } catch (error) {
                 console.error("Error updating quantity:", error);
             }
@@ -172,14 +177,23 @@
 
         async function removeFromCart(productId) {
             try {
+                const user = JSON.parse(localStorage.getItem("user"));
+                if (!user || !user.token) {
+                    console.error("User not logged in");
+                    return;
+                }
+
                 const response = await fetch(`${API_BASE}/cart/remove`, {
                     method: "DELETE",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ product_id: productId }) // Ensure correct request format
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${user.token}`
+                    },
+                    body: JSON.stringify({ product_id: productId }) 
                 });
 
                 if (response.ok) {
-                    fetchCart(); // Refresh UI after deletion
+                    fetchCart(); 
                 } else {
                     console.error("Error removing item:", await response.text());
                 }
@@ -188,9 +202,60 @@
             }
         }
 
-        function checkout() {
-            alert("Proceeding to checkout...");
-            // Implement checkout logic here
+        async function checkout() {
+            try {
+                const user = JSON.parse(localStorage.getItem("user"));
+                if (!user || !user.token) {
+                    alert("You need to be logged in to proceed to checkout.");
+                    return;
+                }
+
+                const res = await fetch(`${API_BASE}/cart`, {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${user.token}`
+                    }
+                });
+
+                if (!res.ok) {
+                    console.error("Failed to fetch cart");
+                    return;
+                }
+
+                const cartData = await res.json();
+
+                if (!Array.isArray(cartData)) {
+                    console.error("Cart response is not an array:", cartData);
+                    return;
+                }
+
+                const totalAmount = cartData.reduce((acc, item) => acc + item.price * item.quantity, 0);
+
+                const order = {
+                    customer_id: user.customer_id,
+                    total_amount: totalAmount,
+                    status: "Pending"
+                };
+
+                const orderRes = await fetch(`${API_BASE}/orders`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${user.token}`
+                    },
+                    body: JSON.stringify(order)
+                });
+
+                if (!orderRes.ok) {
+                    console.error("Failed to create order");
+                    return;
+                }
+
+                alert("Order placed successfully!");
+            } catch (error) {
+                console.error("Error during checkout:", error);
+            }
         }
 
         fetchCart();

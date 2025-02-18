@@ -28,7 +28,7 @@ func getSecretKey() []byte {
 func GenerateJWT(userID uint) (string, error) {
     claims := jwt.MapClaims{
         "userID": userID,
-        "exp":    time.Now().Add(24 * time.Hour).Unix(), // Token expires in 24 hours
+        "exp":    time.Now().Add(24 * time.Hour).Unix(), 
     }
 
     token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -72,8 +72,8 @@ func AuthMiddleware() gin.HandlerFunc {
             return
         }
 
-        customerID := uint(userID) // ✅ Ensure correct type
-        c.Set("customerID", customerID) // ✅ Fix: Use "customerID" instead of "userID"
+        customerID := uint(userID) 
+        c.Set("customerID", customerID) 
 
         c.Next()
     }

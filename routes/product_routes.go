@@ -9,8 +9,8 @@ import (
 func SetupProductRoutes(router *gin.Engine, productHandlers *handlers.ProductHandlers) {
 	productRoutes := router.Group("/products")
 	{
-		productRoutes.POST("", middleware.AuthMiddleware(), productHandlers.CreateProduct) // Only admins can add products
-		productRoutes.GET("", productHandlers.GetProducts)                                 // Public
-		productRoutes.GET("/:id", productHandlers.GetProduct)                              // Public
+		productRoutes.POST("", middleware.AuthMiddleware(), productHandlers.CreateProduct) 
+		productRoutes.GET("", productHandlers.GetProducts)                                
+		productRoutes.GET("/:id", productHandlers.GetProduct)                              
 	}
 }

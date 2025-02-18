@@ -6,17 +6,12 @@
     <meta name="description" content="" />
     <meta name="author" content="" />
     <title>Shop - Clothes Shop</title>
-    <!-- Favicon-->
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <!-- Bootstrap icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css" rel="stylesheet" />
-    <!-- Custom CSS -->
     <link href="/static/styles.css" rel="stylesheet" />
 </head>
 <body>
-    <!-- Navigation-->
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container px-4 px-lg-5">
             <a class="navbar-brand" href="/">Clothes Shop</a>
@@ -26,6 +21,7 @@
                     <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
                     <li class="nav-item"><a class="nav-link" href="/static/about.html">About</a></li>
                     <li class="nav-item"><a class="nav-link" href="/static/shop.html">Shop</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#orders-section">Orders</a></li>
                 </ul>
                 <form class="d-flex">
                     <button class="btn btn-outline-dark" type="button" onclick="location.href='/static/cart.html'">
@@ -40,7 +36,6 @@
             </div>
         </div>
     </nav>
-    <!-- Header-->
     <header class="bg-dark py-5">
         <div class="container px-4 px-lg-5 my-5">
             <div class="text-center text-white">
@@ -49,7 +44,6 @@
             </div>
         </div>
     </header>
-    <!-- Products Section-->
     <section class="py-5">
         <div class="container px-4 px-lg-5 mt-5">
             <div class="row gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center" id="products">
@@ -57,7 +51,14 @@
             </div>
         </div>
     </section>
-    <!-- Footer-->
+    <section class="py-5" id="orders-section">
+        <div class="container px-4 px-lg-5 mt-5">
+            <h2 class="text-center">Your Orders</h2>
+            <div class="row gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center" id="orders">
+                <!-- Orders will be dynamically inserted here -->
+            </div>
+        </div>
+    </section>
     <footer class="py-5 bg-dark">
         <div class="container"><p class="m-0 text-center text-white">Copyright &copy; Your Website 2023</p></div>
     </footer>
@@ -86,9 +87,7 @@
             </div>
         </div>
     </div>
-    <!-- Bootstrap core JS-->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Core theme JS-->
     <script>
         const API_BASE = "http://localhost:8080";
 
@@ -127,14 +126,12 @@
 
                 const product = await res.json();
 
-                // Populate modal with product data
                 document.getElementById("productModalLabel").textContent = product.Name;
                 document.getElementById("modalImage").src = product.ImageURL || "https://via.placeholder.com/500";
                 document.getElementById("modalCategory").textContent = `Category: ${product.Category}`;
                 document.getElementById("modalDescription").textContent = product.Description || "No description available.";
                 document.getElementById("modalPrice").textContent = `$${product.Price.toFixed(2)}`;
 
-                // Show the modal
                 const productModal = new bootstrap.Modal(document.getElementById('productModal'));
                 productModal.show();
             } catch (error) {
@@ -156,7 +153,6 @@
 
                 const cartData = await res.json();
 
-                // Ensure cartData is an array
                 if (!Array.isArray(cartData)) {
                     console.error("Cart response is not an array:", cartData);
                     return;
@@ -165,7 +161,6 @@
                 const cartCount = cartData.reduce((acc, item) => acc + item.quantity, 0);
                 document.getElementById("cart-count").textContent = cartCount;
 
-                // Update the "Add to Cart" buttons
                 cartData.forEach(item => {
                     const btn = document.getElementById(`add-btn-${item.product_id}`);
                     if (btn) {
@@ -179,11 +174,11 @@
         }
 
         async function addToCart(productId) {
-            let user = JSON.parse(localStorage.getItem("user")); // Get logged-in user
+            let user = JSON.parse(localStorage.getItem("user")); 
             let bodyData = { productId, quantity: 1 };
 
             if (user && user.customer_id) {
-                bodyData.customer_id = user.customer_id; // Send customer_id if logged in
+                bodyData.customer_id = user.customer_id; 
             }
 
             await fetch(`${API_BASE}/cart/add`, {
@@ -203,9 +198,53 @@
             fetchCart();
         }
 
+        async function fetchOrders() {
+            try {
+                const user = JSON.parse(localStorage.getItem("user"));
+                if (!user || !user.token) {
+                    console.error("User not logged in");
+                    return;
+                }
+
+                const res = await fetch(`${API_BASE}/orders`, {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${user.token}`
+                    }
+                });
+
+                if (!res.ok) {
+                    console.error("Failed to fetch orders");
+                    return;
+                }
+
+                const orders = await res.json();
+                const ordersContainer = document.getElementById("orders");
+                ordersContainer.innerHTML = "";
+
+                orders.forEach(order => {
+                    const div = document.createElement("div");
+                    div.className = "col mb-5";
+                    div.innerHTML = `
+                        <div class="card h-100">
+                            <div class="card-body p-4 text-center">
+                                <h5 class="fw-bolder">Order #${order.ID}</h5>
+                                <p>Total Amount: $${order.TotalAmount.toFixed(2)}</p>
+                                <p>Status: ${order.Status}</p>
+                            </div>
+                        </div>
+                    `;
+                    ordersContainer.appendChild(div);
+                });
+            } catch (error) {
+                console.error("Error fetching orders:", error);
+            }
+        }
+
         function checkAuth() {
-            // Check if the user is authenticated
             const user = JSON.parse(localStorage.getItem("user"));
+            console.log("User data from localStorage:", user); 
             const authButtons = document.getElementById("auth-buttons");
 
             if (user && user.token) {
@@ -226,11 +265,12 @@
             location.reload();
         }
 
-        // Ensure this function runs when the page loads
-        window.onload = checkAuth;
-
-        fetchProducts();
-        fetchCart();
+        window.onload = function() {
+            checkAuth();
+            fetchProducts();
+            fetchCart();
+            fetchOrders(); 
+        };
     </script>
 </body>
 </html>

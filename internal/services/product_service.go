@@ -16,7 +16,7 @@ func (s *ProductService) CreateProduct(product *models.Product) error {
 
 func (s *ProductService) GetProducts() ([]models.Product, error) {
 	var products []models.Product
-	log.Println("Fetching products from database...") // Debug log
+	log.Println("Fetching products from database...") 
 	result := s.Repo.DB.Find(&products)
 	if result.Error != nil {
 		log.Println("Database query error:", result.Error)
@@ -25,7 +25,7 @@ func (s *ProductService) GetProducts() ([]models.Product, error) {
 	if len(products) == 0 {
 		log.Println("Warning: No products found in the database!")
 	} else {
-		log.Println("Products from DB:", products) // Debugging log
+		log.Println("Products from DB:", products) 
 	}
 	return products, nil
 }

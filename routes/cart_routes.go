@@ -10,7 +10,7 @@ func SetupCartRoutes(router *gin.Engine, cartHandlers *handlers.CartHandlers) {
     {
         cartRoutes.POST("/add", cartHandlers.AddItem)
         cartRoutes.GET("", cartHandlers.GetCart)
-        cartRoutes.POST("/update", cartHandlers.UpdateItemQuantity) // Ensure this line is present
-        cartRoutes.DELETE("/remove/:id", cartHandlers.RemoveItem)    // Ensure this line is present
+        cartRoutes.POST("/update", cartHandlers.UpdateItemQuantity) 
+        cartRoutes.DELETE("/remove/:id", cartHandlers.RemoveItem)   
     }
 }

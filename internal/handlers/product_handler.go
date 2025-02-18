@@ -14,14 +14,14 @@ type ProductHandlers struct {
 }
 
 func (h *ProductHandlers) GetProducts(c *gin.Context) {
-	log.Println("Handler: Fetching products...") // Debug log
+	log.Println("Handler: Fetching products...") 
 	products, err := h.Service.GetProducts()
 	if err != nil {
 		log.Println("Error fetching products:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch products"})
 		return
 	}
-	log.Println("Fetched products:", products) // Debugging log
+	log.Println("Fetched products:", products) 
 	c.JSON(http.StatusOK, products)
 }
 
