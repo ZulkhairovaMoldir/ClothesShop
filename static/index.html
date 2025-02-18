@@ -61,6 +61,31 @@
     <footer class="py-5 bg-dark">
         <div class="container"><p class="m-0 text-center text-white">Copyright &copy; Your Website 2023</p></div>
     </footer>
+    <!-- Product Info Modal -->
+    <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="productModalLabel"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- Product Image -->
+                        <div class="col-md-6">
+                            <img id="modalImage" class="img-fluid rounded" alt="Product Image">
+                        </div>
+                        <!-- Product Details -->
+                        <div class="col-md-6">
+                            <p id="modalCategory" class="text-muted"></p>
+                            <p id="modalDescription"></p>
+                            <h4 id="modalPrice"></h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Bootstrap core JS-->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Core theme JS-->
@@ -79,20 +104,42 @@
                 div.className = "col mb-5";
                 div.innerHTML = `
                     <div class="card h-100">
-                        <img class="card-img-top" src="https://dummyimage.com/450x300/dee2e6/6c757d.jpg" alt="..." />
-                        <div class="card-body p-4">
-                            <div class="text-center">
+                        <a href="#" onclick="openProductModal(${product.ID})" style="text-decoration: none; color: inherit;">
+                            <img class="card-img-top" src="${product.ImageURL}" alt="${product.Name}" />
+                            <div class="card-body p-4 text-center">
                                 <h5 class="fw-bolder">${product.Name}</h5>
-                                $${product.Price}
+                                <p>$${product.Price.toFixed(2)}</p>
                             </div>
-                        </div>
-                        <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
-                            <div class="text-center"><button id="add-btn-${product.ID}" class="btn btn-outline-dark mt-auto" onclick="addToCart(${product.ID})">Add to Cart</button></div>
+                        </a>
+                        <div class="card-footer p-4 pt-0 border-top-0 bg-transparent text-center">
+                            <button class="btn btn-outline-dark mt-auto" onclick="addToCart(${product.ID})">Add to Cart</button>
                         </div>
                     </div>
                 `;
                 productsContainer.appendChild(div);
             });
+        }
+
+        async function openProductModal(productId) {
+            try {
+                const res = await fetch(`${API_BASE}/products/${productId}`);
+                if (!res.ok) throw new Error("Failed to load product");
+
+                const product = await res.json();
+
+                // Populate modal with product data
+                document.getElementById("productModalLabel").textContent = product.Name;
+                document.getElementById("modalImage").src = product.ImageURL || "https://via.placeholder.com/500";
+                document.getElementById("modalCategory").textContent = `Category: ${product.Category}`;
+                document.getElementById("modalDescription").textContent = product.Description || "No description available.";
+                document.getElementById("modalPrice").textContent = `$${product.Price.toFixed(2)}`;
+
+                // Show the modal
+                const productModal = new bootstrap.Modal(document.getElementById('productModal'));
+                productModal.show();
+            } catch (error) {
+                console.error("Error fetching product:", error);
+            }
         }
 
         async function fetchCart() {
