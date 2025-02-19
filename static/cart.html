@@ -49,7 +49,7 @@
                 <!-- Cart items will be dynamically inserted here -->
             </div>
             <div class="text-center mt-4">
-                <button class="btn btn-primary" onclick="checkout()">Proceed to Checkout</button>
+                <button class="btn btn-primary" onclick="redirectToOrder()">Proceed to Checkout</button>
             </div>
         </div>
     </section>
@@ -63,17 +63,14 @@
         async function fetchCart() {
             try {
                 const user = JSON.parse(localStorage.getItem("user"));
-                if (!user || !user.token) {
-                    console.error("User not logged in");
-                    return;
+                const headers = { "Content-Type": "application/json" };
+                if (user && user.token) {
+                    headers["Authorization"] = `Bearer ${user.token}`;
                 }
 
                 const res = await fetch(`${API_BASE}/cart`, {
                     method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${user.token}`
-                    }
+                    headers: headers
                 });
 
                 if (!res.ok) {
@@ -147,17 +144,14 @@
         async function updateQuantity(productId, newQuantity) {
             try {
                 const user = JSON.parse(localStorage.getItem("user"));
-                if (!user || !user.token) {
-                    console.error("User not logged in");
-                    return;
+                const headers = { "Content-Type": "application/json" };
+                if (user && user.token) {
+                    headers["Authorization"] = `Bearer ${user.token}`;
                 }
 
                 const response = await fetch(`${API_BASE}/cart/update`, {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${user.token}`
-                    },
+                    headers: headers,
                     body: JSON.stringify({ product_id: productId, quantity: newQuantity }),
                 });
 
@@ -178,18 +172,14 @@
         async function removeFromCart(productId) {
             try {
                 const user = JSON.parse(localStorage.getItem("user"));
-                if (!user || !user.token) {
-                    console.error("User not logged in");
-                    return;
+                const headers = { "Content-Type": "application/json" };
+                if (user && user.token) {
+                    headers["Authorization"] = `Bearer ${user.token}`;
                 }
 
-                const response = await fetch(`${API_BASE}/cart/remove`, {
+                const response = await fetch(`${API_BASE}/cart/remove/${productId}`, {
                     method: "DELETE",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${user.token}`
-                    },
-                    body: JSON.stringify({ product_id: productId }) 
+                    headers: headers
                 });
 
                 if (response.ok) {
@@ -202,20 +192,17 @@
             }
         }
 
-        async function checkout() {
+        async function redirectToOrder() {
             try {
                 const user = JSON.parse(localStorage.getItem("user"));
-                if (!user || !user.token) {
-                    alert("You need to be logged in to proceed to checkout.");
-                    return;
+                const headers = { "Content-Type": "application/json" };
+                if (user && user.token) {
+                    headers["Authorization"] = `Bearer ${user.token}`;
                 }
 
                 const res = await fetch(`${API_BASE}/cart`, {
                     method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${user.token}`
-                    }
+                    headers: headers
                 });
 
                 if (!res.ok) {
@@ -232,27 +219,16 @@
 
                 const totalAmount = cartData.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
-                const order = {
-                    customer_id: user.customer_id,
-                    total_amount: totalAmount,
-                    status: "Pending"
-                };
+                const cartItems = cartData.map(item => ({
+                    product_id: item.product_id,
+                    name: item.name,
+                    price: item.price,
+                    quantity: item.quantity
+                }));
 
-                const orderRes = await fetch(`${API_BASE}/orders`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${user.token}`
-                    },
-                    body: JSON.stringify(order)
-                });
+                localStorage.setItem("order", JSON.stringify({ totalAmount, cartItems }));
 
-                if (!orderRes.ok) {
-                    console.error("Failed to create order");
-                    return;
-                }
-
-                alert("Order placed successfully!");
+                window.location.href = "/static/order.html";
             } catch (error) {
                 console.error("Error during checkout:", error);
             }

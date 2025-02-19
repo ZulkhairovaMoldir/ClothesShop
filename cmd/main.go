@@ -89,6 +89,7 @@ func main() {
         protected.DELETE("/products/:id", productHandlers.DeleteProduct)
 
         protected.POST("/orders", orderHandlers.CreateOrder)
+        protected.GET("/orders/user", orderHandlers.GetOrdersByUser) // Add this line
     }
 
     router.GET("/health-check", func(c *gin.Context) {

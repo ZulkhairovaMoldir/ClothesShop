@@ -3,7 +3,7 @@ package handlers
 import (
     "ClothesShop/internal/models"
     "ClothesShop/internal/services"
-    "fmt"
+    "github.com/gin-contrib/sessions"
     "github.com/gin-gonic/gin"
     "net/http"
     "strconv"
@@ -44,8 +44,22 @@ func (h *OrderHandlers) CreateOrder(c *gin.Context) {
         return
     }
 
-    // Debugging print
-    fmt.Printf("Received order: %+v\n", order)
+    session := sessions.Default(c)
+    customerID, exists := c.Get("customerID")
+
+    if exists {
+        customerIDValue := customerID.(uint)
+        order.CustomerID = &customerIDValue
+        order.SessionID = nil
+    } else {
+        sessionID := session.Get("sessionID")
+        if sessionID == nil {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "No session found"})
+            return
+        }
+        sessionIDStr := sessionID.(string)
+        order.SessionID = &sessionIDStr
+    }
 
     if err := h.Service.CreateOrder(&order); err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to create order"})
@@ -66,4 +80,19 @@ func (h *OrderHandlers) DeleteOrder(c *gin.Context) {
         return
     }
     c.JSON(http.StatusOK, gin.H{"message": "Order deleted"})
+}
+
+func (h *OrderHandlers) GetOrdersByUser(c *gin.Context) {
+    userID, exists := c.Get("userID")
+    if !exists {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+        return
+    }
+
+    orders, err := h.Service.GetOrdersByCustomerID(userID.(uint))
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to fetch orders"})
+        return
+    }
+    c.JSON(http.StatusOK, orders)
 }

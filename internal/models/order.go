@@ -1,12 +1,13 @@
 package models
 
-import "gorm.io/gorm"
+import "time"
 
 type Order struct {
-	ID          uint `gorm:"primaryKey"`
-	CustomerID  uint `gorm:"not null"` 
-	TotalAmount float64
-	Status      string `gorm:"type:varchar(50);not null"`
-	CreatedAt   *gorm.DeletedAt
-	UpdatedAt   *gorm.DeletedAt
+    ID          uint       `gorm:"primaryKey"`
+    CustomerID  *uint      `gorm:"default:null"`
+    SessionID   *string    `gorm:"default:null"`
+    TotalAmount float64    `gorm:"not null"`
+    Status      string     `gorm:"type:varchar(100)"`
+    CreatedAt   time.Time
+    UpdatedAt   time.Time
 }

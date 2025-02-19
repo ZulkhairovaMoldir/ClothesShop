@@ -21,7 +21,6 @@
                     <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
                     <li class="nav-item"><a class="nav-link" href="/static/about.html">About</a></li>
                     <li class="nav-item"><a class="nav-link" href="/static/shop.html">Shop</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#orders-section">Orders</a></li>
                 </ul>
                 <form class="d-flex">
                     <button class="btn btn-outline-dark" type="button" onclick="location.href='/static/cart.html'">
@@ -48,14 +47,6 @@
         <div class="container px-4 px-lg-5 mt-5">
             <div class="row gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center" id="products">
                 <!-- Products will be dynamically inserted here -->
-            </div>
-        </div>
-    </section>
-    <section class="py-5" id="orders-section">
-        <div class="container px-4 px-lg-5 mt-5">
-            <h2 class="text-center">Your Orders</h2>
-            <div class="row gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center" id="orders">
-                <!-- Orders will be dynamically inserted here -->
             </div>
         </div>
     </section>
@@ -198,50 +189,6 @@
             fetchCart();
         }
 
-        async function fetchOrders() {
-            try {
-                const user = JSON.parse(localStorage.getItem("user"));
-                if (!user || !user.token) {
-                    console.error("User not logged in");
-                    return;
-                }
-
-                const res = await fetch(`${API_BASE}/orders`, {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${user.token}`
-                    }
-                });
-
-                if (!res.ok) {
-                    console.error("Failed to fetch orders");
-                    return;
-                }
-
-                const orders = await res.json();
-                const ordersContainer = document.getElementById("orders");
-                ordersContainer.innerHTML = "";
-
-                orders.forEach(order => {
-                    const div = document.createElement("div");
-                    div.className = "col mb-5";
-                    div.innerHTML = `
-                        <div class="card h-100">
-                            <div class="card-body p-4 text-center">
-                                <h5 class="fw-bolder">Order #${order.ID}</h5>
-                                <p>Total Amount: $${order.TotalAmount.toFixed(2)}</p>
-                                <p>Status: ${order.Status}</p>
-                            </div>
-                        </div>
-                    `;
-                    ordersContainer.appendChild(div);
-                });
-            } catch (error) {
-                console.error("Error fetching orders:", error);
-            }
-        }
-
         function checkAuth() {
             const user = JSON.parse(localStorage.getItem("user"));
             console.log("User data from localStorage:", user); 
@@ -269,7 +216,6 @@
             checkAuth();
             fetchProducts();
             fetchCart();
-            fetchOrders(); 
         };
     </script>
 </body>
