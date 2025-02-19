@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    <title>Shop - Clothes Shop</title>
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css" rel="stylesheet" />
+    <link href="/static/styles.css" rel="stylesheet" />
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container px-4 px-lg-5">
+            <a class="navbar-brand" href="/">Clothes Shop</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
+                    <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/static/about.html">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/static/shop.html">Shop</a></li>
+                </ul>
+                <form class="d-flex">
+                    <button class="btn btn-outline-dark" type="button" onclick="location.href='/static/cart.html'">
+                        <i class="bi-cart-fill me-1"></i>
+                        Cart
+                        <span class="badge bg-dark text-white ms-1 rounded-pill" id="cart-count">0</span>
+                    </button>
+                </form>
+                <div id="auth-buttons" class="ms-3">
+                    <!-- Buttons will be dynamically inserted here -->
+                </div>
+            </div>
+        </div>
+    </nav>
+    <header class="bg-dark py-5">
+        <div class="container px-4 px-lg-5 my-5">
+            <div class="text-center text-white">
+                <h1 class="display-4 fw-bolder">Shop in style</h1>
+                <p class="lead fw-normal text-white-50 mb-0">With this shop homepage template</p>
+            </div>
+        </div>
+    </header>
+    <section class="py-5">
+        <div class="container px-4 px-lg-5 mt-5">
+            <div class="row gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center" id="products">
+                <!-- Products will be dynamically inserted here -->
+            </div>
+        </div>
+    </section>
+    <footer class="py-5 bg-dark">
+        <div class="container"><p class="m-0 text-center text-white">Copyright &copy; Your Website 2023</p></div>
+    </footer>
+    <!-- Product Info Modal -->
+    <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="productModalLabel"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- Product Image -->
+                        <div class="col-md-6">
+                            <img id="modalImage" class="img-fluid rounded" alt="Product Image">
+                        </div>
+                        <!-- Product Details -->
+                        <div class="col-md-6">
+                            <p id="modalCategory" class="text-muted"></p>
+                            <p id="modalDescription"></p>
+                            <h4 id="modalPrice"></h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_BASE = "http://localhost:8080";
+
+        async function fetchProducts() {
+            const res = await fetch(`${API_BASE}/products`);
+            const products = await res.json();
+            
+            const productsContainer = document.getElementById("products");
+            productsContainer.innerHTML = "";
+            
+            products.forEach(product => {
+                const div = document.createElement("div");
+                div.className = "col mb-5";
+                div.innerHTML = `
+                    <div class="card h-100">
+                        <a href="#" onclick="openProductModal(${product.ID})" style="text-decoration: none; color: inherit;">
+                            <img class="card-img-top" src="${product.ImageURL}" alt="${product.Name}" />
+                            <div class="card-body p-4 text-center">
+                                <h5 class="fw-bolder">${product.Name}</h5>
+                                <p>$${product.Price.toFixed(2)}</p>
+                            </div>
+                        </a>
+                        <div class="card-footer p-4 pt-0 border-top-0 bg-transparent text-center">
+                            <button class="btn btn-outline-dark mt-auto" onclick="addToCart(${product.ID})">Add to Cart</button>
+                        </div>
+                    </div>
+                `;
+                productsContainer.appendChild(div);
+            });
+        }
+
+        async function openProductModal(productId) {
+            try {
+                const res = await fetch(`${API_BASE}/products/${productId}`);
+                if (!res.ok) throw new Error("Failed to load product");
+
+                const product = await res.json();
+
+                document.getElementById("productModalLabel").textContent = product.Name;
+                document.getElementById("modalImage").src = product.ImageURL || "https://via.placeholder.com/500";
+                document.getElementById("modalCategory").textContent = `Category: ${product.Category}`;
+                document.getElementById("modalDescription").textContent = product.Description || "No description available.";
+                document.getElementById("modalPrice").textContent = `$${product.Price.toFixed(2)}`;
+
+                const productModal = new bootstrap.Modal(document.getElementById('productModal'));
+                productModal.show();
+            } catch (error) {
+                console.error("Error fetching product:", error);
+            }
+        }
+
+        async function fetchCart() {
+            try {
+                const res = await fetch(`${API_BASE}/cart`, {
+                    method: "GET",
+                    headers: { "Content-Type": "application/json" }
+                });
+
+                if (!res.ok) {
+                    console.error("Failed to fetch cart");
+                    return;
+                }
+
+                const cartData = await res.json();
+
+                if (!Array.isArray(cartData)) {
+                    console.error("Cart response is not an array:", cartData);
+                    return;
+                }
+
+                const cartCount = cartData.reduce((acc, item) => acc + item.quantity, 0);
+                document.getElementById("cart-count").textContent = cartCount;
+
+                cartData.forEach(item => {
+                    const btn = document.getElementById(`add-btn-${item.product_id}`);
+                    if (btn) {
+                        btn.innerText = "Added to Cart";
+                        btn.disabled = true;
+                    }
+                });
+            } catch (error) {
+                console.error("Error fetching cart:", error);
+            }
+        }
+
+        async function addToCart(productId) {
+            let user = JSON.parse(localStorage.getItem("user")); 
+            let bodyData = { productId, quantity: 1 };
+
+            if (user && user.customer_id) {
+                bodyData.customer_id = user.customer_id; 
+            }
+
+            await fetch(`${API_BASE}/cart/add`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(bodyData),
+            });
+
+            fetchCart();
+        }
+
+        async function removeFromCart(productId) {
+            await fetch(`${API_BASE}/cart/remove/${productId}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" }
+            });
+            fetchCart();
+        }
+
+        function checkAuth() {
+            const user = JSON.parse(localStorage.getItem("user"));
+            console.log("User data from localStorage:", user); 
+            const authButtons = document.getElementById("auth-buttons");
+
+            if (user && user.token) {
+                authButtons.innerHTML = `
+                    <button class="btn btn-outline-dark" onclick="location.href='/static/profile.html'">Profile</button>
+                    <button class="btn btn-outline-dark" onclick="logout()">Logout</button>
+                `;
+            } else {
+                authButtons.innerHTML = `
+                    <button class="btn btn-outline-dark" onclick="location.href='/static/login.html'">Login</button>
+                    <button class="btn btn-outline-dark" onclick="location.href='/static/register.html'">Register</button>
+                `;
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem("user");
+            location.reload();
+        }
+
+        window.onload = function() {
+            checkAuth();
+            fetchProducts();
+            fetchCart();
+        };
+    </script>
+</body>
+</html>

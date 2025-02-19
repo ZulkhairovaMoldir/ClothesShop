@@ -9,25 +9,30 @@ type UserRepository struct {
 	DB *gorm.DB
 }
 
-func (r *UserRepository) GetAllUsers() ([]models.User, error) {
-	var users []models.User
-	result := r.DB.Find(&users)
-	return users, result.Error
-}
-
-func (r *UserRepository) GetUserByID(id uint) (*models.User, error) {
+func (r *UserRepository) FindByEmail(email string) (*models.User, error) {
 	var user models.User
-	result := r.DB.First(&user, id)
-	if result.Error != nil {
-		return nil, result.Error
+	if err := r.DB.Where("email = ?", email).First(&user).Error; err != nil {
+		return nil, err
 	}
 	return &user, nil
 }
 
-func (r *UserRepository) CreateUser(user *models.User) error {
+func (r *UserRepository) Save(user *models.User) error {
 	return r.DB.Create(user).Error
 }
 
-func (r *UserRepository) DeleteUser(id uint) error {
+func (r *UserRepository) GetAllUsers() ([]models.User, error) {
+	var users []models.User
+	err := r.DB.Find(&users).Error
+	return users, err
+}
+
+func (r *UserRepository) GetUserByID(id string) (*models.User, error) {
+	var user models.User
+	err := r.DB.First(&user, id).Error
+	return &user, err
+}
+
+func (r *UserRepository) DeleteUser(id string) error {
 	return r.DB.Delete(&models.User{}, id).Error
 }

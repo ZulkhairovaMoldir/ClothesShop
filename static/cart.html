@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    <title>Cart - Clothes Shop</title>
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css" rel="stylesheet" />
+    <link href="/static/styles.css" rel="stylesheet" />
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container px-4 px-lg-5">
+            <a class="navbar-brand" href="/">Clothes Shop</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
+                    <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/static/about.html">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/static/shop.html">Shop</a></li>
+                </ul>
+                <form class="d-flex">
+                    <button class="btn btn-outline-dark" type="button" onclick="location.href='/static/cart.html'">
+                        <i class="bi-cart-fill me-1"></i>
+                        Cart
+                        <span class="badge bg-dark text-white ms-1 rounded-pill" id="cart-count">0</span>
+                    </button>
+                </form>
+                <div id="auth-buttons" class="ms-3">
+                    <!-- Buttons will be dynamically inserted here -->
+                </div>
+            </div>
+        </div>
+    </nav>
+    <header class="bg-dark py-5">
+        <div class="container px-4 px-lg-5 my-5">
+            <div class="text-center text-white">
+                <h1 class="display-4 fw-bolder">Your Cart</h1>
+                <p class="lead fw-normal text-white-50 mb-0">Review your items before checkout</p>
+            </div>
+        </div>
+    </header>
+    <section class="py-5">
+        <div class="container px-4 px-lg-5 mt-5">
+            <div class="row gx-4 gx-lg-5" id="cart-items">
+                <!-- Cart items will be dynamically inserted here -->
+            </div>
+            <div class="text-center mt-4">
+                <button class="btn btn-primary" onclick="redirectToOrder()">Proceed to Checkout</button>
+            </div>
+        </div>
+    </section>
+    <footer class="py-5 bg-dark">
+        <div class="container"><p class="m-0 text-center text-white">Copyright &copy; Your Website 2023</p></div>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_BASE = "http://localhost:8080";
+
+        async function fetchCart() {
+            try {
+                const user = JSON.parse(localStorage.getItem("user"));
+                const headers = { "Content-Type": "application/json" };
+                if (user && user.token) {
+                    headers["Authorization"] = `Bearer ${user.token}`;
+                }
+
+                const res = await fetch(`${API_BASE}/cart`, {
+                    method: "GET",
+                    headers: headers
+                });
+
+                if (!res.ok) {
+                    console.error("Failed to fetch cart");
+                    return;
+                }
+
+                const cartData = await res.json();
+
+                if (!Array.isArray(cartData)) {
+                    console.error("Cart response is not an array:", cartData);
+                    return;
+                }
+
+                const cartItemsContainer = document.getElementById("cart-items");
+                cartItemsContainer.innerHTML = "";
+
+                cartData.forEach(item => {
+                    const div = document.createElement("div");
+                    div.className = "col-12 mb-4";
+                    div.innerHTML = `
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <img class="img-fluid" src="https://dummyimage.com/450x300/dee2e6/6c757d.jpg" alt="..." />
+                                    </div>
+                                    <div class="col-md-8">
+                                        <h5 class="fw-bolder">${item.name}</h5>
+                                        <p id="quantity-${item.product_id}">Quantity: ${item.quantity}</p>
+                                        <p>Price: $${item.price}</p>
+                                        <button class="btn btn-danger" onclick="removeFromCart(${item.product_id})">Remove</button>
+                                        <button class="btn btn-secondary" onclick="decrementQuantity(${item.product_id})">-</button>
+                                        <button class="btn btn-secondary" onclick="incrementQuantity(${item.product_id})">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    cartItemsContainer.appendChild(div);
+                });
+
+                const cartCount = cartData.reduce((acc, item) => acc + item.quantity, 0);
+                document.getElementById("cart-count").textContent = cartCount;
+            } catch (error) {
+                console.error("Error fetching cart:", error);
+            }
+        }
+
+        function incrementQuantity(productId) {
+            const quantityElement = document.getElementById(`quantity-${productId}`);
+            let currentQuantity = parseInt(quantityElement.innerText.split(": ")[1]);
+
+            quantityElement.innerText = `Quantity: ${currentQuantity + 1}`;
+
+            updateQuantity(productId, currentQuantity + 1);
+        }
+
+        function decrementQuantity(productId) {
+            const quantityElement = document.getElementById(`quantity-${productId}`);
+            let currentQuantity = parseInt(quantityElement.innerText.split(": ")[1]);
+
+            if (currentQuantity > 1) {
+                quantityElement.innerText = `Quantity: ${currentQuantity - 1}`;
+                updateQuantity(productId, currentQuantity - 1);
+            } else {
+                removeFromCart(productId);
+            }
+        }
+
+        async function updateQuantity(productId, newQuantity) {
+            try {
+                const user = JSON.parse(localStorage.getItem("user"));
+                const headers = { "Content-Type": "application/json" };
+                if (user && user.token) {
+                    headers["Authorization"] = `Bearer ${user.token}`;
+                }
+
+                const response = await fetch(`${API_BASE}/cart/update`, {
+                    method: "POST",
+                    headers: headers,
+                    body: JSON.stringify({ product_id: productId, quantity: newQuantity }),
+                });
+
+                const result = await response.json();
+                console.log("Updated Cart Response:", result);
+
+                if (result.quantity !== undefined) {
+                    const quantityElement = document.getElementById(`quantity-${productId}`);
+                    quantityElement.innerText = `Quantity: ${result.quantity}`;
+                }
+
+                fetchCart(); 
+            } catch (error) {
+                console.error("Error updating quantity:", error);
+            }
+        }
+
+        async function removeFromCart(productId) {
+            try {
+                const user = JSON.parse(localStorage.getItem("user"));
+                const headers = { "Content-Type": "application/json" };
+                if (user && user.token) {
+                    headers["Authorization"] = `Bearer ${user.token}`;
+                }
+
+                const response = await fetch(`${API_BASE}/cart/remove/${productId}`, {
+                    method: "DELETE",
+                    headers: headers
+                });
+
+                if (response.ok) {
+                    fetchCart();
+                } else {
+                    console.error("Error removing item:", await response.text());
+                }
+            } catch (error) {
+                console.error("Error in removeFromCart:", error);
+            }
+        }
+
+
+        async function redirectToOrder() {
+            try {
+                const user = JSON.parse(localStorage.getItem("user"));
+                const headers = { "Content-Type": "application/json" };
+                if (user && user.token) {
+                    headers["Authorization"] = `Bearer ${user.token}`;
+                }
+
+                const res = await fetch(`${API_BASE}/cart`, {
+                    method: "GET",
+                    headers: headers
+                });
+
+                if (!res.ok) {
+                    console.error("Failed to fetch cart");
+                    return;
+                }
+
+                const cartData = await res.json();
+
+                if (!Array.isArray(cartData)) {
+                    console.error("Cart response is not an array:", cartData);
+                    return;
+                }
+
+                const totalAmount = cartData.reduce((acc, item) => acc + item.price * item.quantity, 0);
+
+                const cartItems = cartData.map(item => ({
+                    product_id: item.product_id,
+                    name: item.name,
+                    price: item.price,
+                    quantity: item.quantity
+                }));
+
+                localStorage.setItem("order", JSON.stringify({ totalAmount, cartItems }));
+
+                window.location.href = "/static/order.html";
+            } catch (error) {
+                console.error("Error during checkout:", error);
+            }
+        }
+
+        fetchCart();
+    </script>
+</body>
+</html>

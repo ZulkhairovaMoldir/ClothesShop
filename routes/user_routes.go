@@ -2,16 +2,17 @@ package routes
 
 import (
 	"ClothesShop/internal/handlers"
+	"ClothesShop/middleware"
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRoutes(userHandlers *handlers.UserHandlers) *gin.Engine {
-	router := gin.Default()
-
-	router.POST("/users", userHandlers.CreateUser)
-	router.GET("/users", userHandlers.GetUsers)
-	router.GET("/users/:id", userHandlers.GetUser)
-	router.DELETE("/users/:id", userHandlers.DeleteUser)
-
-	return router
+func SetupUserRoutes(router *gin.RouterGroup, userHandlers *handlers.UserHandlers, authHandler *handlers.AuthHandler) {
+	userRoutes := router.Group("/users")
+	{
+		userRoutes.POST("", userHandlers.CreateUser) 
+		userRoutes.POST("/login", authHandler.Login) 
+		userRoutes.GET("", middleware.AuthMiddleware(), userHandlers.GetUsers)
+		userRoutes.GET("/:id", middleware.AuthMiddleware(), userHandlers.GetUser)
+		userRoutes.DELETE("/:id", middleware.AuthMiddleware(), userHandlers.DeleteUser)
+	}
 }
