@@ -183,7 +183,7 @@
                 });
 
                 if (response.ok) {
-                    fetchCart(); 
+                    fetchCart();
                 } else {
                     console.error("Error removing item:", await response.text());
                 }
@@ -191,6 +191,7 @@
                 console.error("Error in removeFromCart:", error);
             }
         }
+
 
         async function redirectToOrder() {
             try {
